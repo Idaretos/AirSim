@@ -67,16 +67,16 @@ void MultirotorPawnSimApi::updateRenderedState(float dt)
     collision_response = multirotor_physics_body_->getCollisionResponseInfo();
 
     //update rotor poses
-    for (unsigned int i = 0; i < rotor_count_; ++i) {
-        const auto& rotor_output = multirotor_physics_body_->getRotorOutput(i);
-        // update private rotor variable
-        rotor_states_.rotors[i].update(rotor_output.thrust, rotor_output.torque_scaler, rotor_output.speed);
-        RotorActuatorInfo* info = &rotor_actuator_info_[i];
-        info->rotor_speed = rotor_output.speed;
-        info->rotor_direction = static_cast<int>(rotor_output.turning_direction);
-        info->rotor_thrust = rotor_output.thrust;
-        info->rotor_control_filtered = rotor_output.control_signal_filtered;
-    }
+    // for (unsigned int i = 0; i < rotor_count_; ++i) {
+    //     const auto& rotor_output = multirotor_physics_body_->getRotorOutput(i);
+    //     // update private rotor variable
+    //     rotor_states_.rotors[i].update(rotor_output.thrust, rotor_output.torque_scaler, rotor_output.speed);
+    //     RotorActuatorInfo* info = &rotor_actuator_info_[i];
+    //     info->rotor_speed = rotor_output.speed;
+    //     info->rotor_direction = static_cast<int>(rotor_output.turning_direction);
+    //     info->rotor_thrust = rotor_output.thrust;
+    //     info->rotor_control_filtered = rotor_output.control_signal_filtered;
+    // }
 
     vehicle_api_->getStatusMessages(vehicle_api_messages_);
 

@@ -728,7 +728,7 @@ namespace airlib
         {
             // pick a number, PX4 doesn't have a fixed limit here, but 3 meters is probably safe
             // enough to get out of the backwash turbulence.  Negative due to NED coordinate system.
-            return -3.0f;
+            return -5.0f;
         }
 
         virtual float getDistanceAccuracy() const override

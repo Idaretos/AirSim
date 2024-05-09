@@ -182,7 +182,7 @@ namespace airlib
 
         virtual float getCommandPeriod() const override
         {
-            return 1.0f / 50; //50hz
+            return 1.0f / 60; //50hz
         }
 
         virtual float getTakeoffZ() const override

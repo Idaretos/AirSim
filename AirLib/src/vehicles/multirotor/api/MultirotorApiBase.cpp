@@ -10,6 +10,9 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <time.h>
+
 
 namespace msr
 {
@@ -298,7 +301,7 @@ namespace airlib
         else {
             //if auto mode requested for lookahead then calculate based on velocity
             lookahead = getAutoLookahead(velocity, adaptive_lookahead);
-            Utils::log(Utils::stringf("lookahead = %f, adaptive_lookahead = %f", lookahead, adaptive_lookahead));
+            //Utils::log(Utils::stringf("lookahead = %f, adaptive_lookahead = %f", lookahead, adaptive_lookahead));
         }
 
         //add current position as starting point
@@ -436,8 +439,8 @@ namespace airlib
             //we climb path even if distance was 0 to take care of duplicated points on path
             if (goal_dist >= 0) {
                 overshoot = setNextPathPosition(path3d, path_segs, cur_path_loc, goal_dist, cur_path_loc);
-                if (overshoot)
-                    Utils::log(Utils::stringf("overshoot=%f", overshoot));
+                // if (overshoot)
+                //     Utils::log(Utils::stringf("overshoot=%f", overshoot));
             }
             //else
             //    Utils::logMessage("goal_dist was negative: %f", goal_dist);
@@ -873,8 +876,8 @@ namespace airlib
             next_dist -= seg.seg_length - offset;
             offset = 0;
 
-            if (&cur_path_loc == &next_path_loc)
-                Utils::log(Utils::stringf("segment %d done: x=%f, y=%f, z=%f", i, path.at(i).x(), path.at(i).y(), path.at(i).z()));
+            // if (&cur_path_loc == &next_path_loc)
+            //     Utils::log(Utils::stringf("segment %d done: x=%f, y=%f, z=%f", i, path.at(i).x(), path.at(i).y(), path.at(i).z()));
 
             ++i;
         }

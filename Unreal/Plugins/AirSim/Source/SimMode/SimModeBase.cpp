@@ -148,7 +148,9 @@ void ASimModeBase::BeginPlay()
 
     UWorld* World = GetWorld();
     if (World) {
-        UWeatherLib::initWeather(World, spawned_actors_);
+        //Disabled by jihwan
+        //UWeatherLib::initWeather(World, spawned_actors_);
+
         //UWeatherLib::showWeatherMenu(World);
     }
     UAirBlueprintLib::GenerateActorMap(this, scene_object_map);
@@ -346,15 +348,16 @@ void ASimModeBase::Tick(float DeltaSeconds)
     if (isRecording())
         ++record_tick_count;
 
-    advanceTimeOfDay();
+    //d by jihwan
+    // advanceTimeOfDay();
 
-    showClockStats();
+    // showClockStats();
 
-    updateDebugReport(debug_reporter_);
+    // updateDebugReport(debug_reporter_);
 
-    drawLidarDebugPoints();
+    // drawLidarDebugPoints();
 
-    drawDistanceSensorDebugPoints();
+    // drawDistanceSensorDebugPoints();
 
     Super::Tick(DeltaSeconds);
 }
@@ -854,7 +857,7 @@ void ASimModeBase::drawLidarDebugPoints()
                             uu_point,
                             5, // size
                             FColor::Green,
-                            false, // persistent (never goes away)
+                            true, // persistent (never goes away) but changed by jihwan
                             0.03 // LifeTime: point leaves a trail on moving object
                         );
                     }
@@ -906,7 +909,7 @@ void ASimModeBase::drawDistanceSensorDebugPoints()
                         uu_point,
                         10, // size
                         FColor::Green,
-                        false, // persistent (never goes away)
+                        true, // persistent (never goes away) but changed by jihwan
                         0.03 // LifeTime: point leaves a trail on moving object
                     );
                 }
