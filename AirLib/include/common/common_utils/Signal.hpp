@@ -4,6 +4,9 @@
 #include <functional>
 #include <map>
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 // A signal object may call multiple slots with the
 // same signature. You can connect functions to the signal
 // which will be called when the emit() method on the
@@ -89,6 +92,7 @@ public:
     // calls all connected functions
     void emit(Args... p)
     {
+        SCOPED_NAMED_EVENT(Signal_emit, FColor::Green);
         for (auto it = slots_.begin(); it != slots_.end();) {
             // Increment here so that the entry can be erased from inside the method as well
             (it++)->second(p...);

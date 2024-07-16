@@ -7,6 +7,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/OutputDeviceNull.h"
 #include "Engine/World.h"
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
 
 #include <memory>
 #include "AirBlueprintLib.h"
@@ -345,6 +347,7 @@ void ASimModeBase::setupPhysicsLoopPeriod()
 
 void ASimModeBase::Tick(float DeltaSeconds)
 {
+    SCOPED_NAMED_EVENT(ASimModeBase_Tick, FColor::Green);
     if (isRecording())
         ++record_tick_count;
 

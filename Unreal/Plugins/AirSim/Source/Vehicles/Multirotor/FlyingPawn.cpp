@@ -3,6 +3,8 @@
 #include "AirBlueprintLib.h"
 #include "common/CommonStructs.hpp"
 #include "common/Common.hpp"
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
 
 AFlyingPawn::AFlyingPawn()
 {
@@ -26,6 +28,7 @@ void AFlyingPawn::initializeForBeginPlay()
 
 void AFlyingPawn::Tick(float DeltaSeconds)
 {
+    SCOPED_NAMED_EVENT(AFlyingPawn_Tick, FColor::Green);
     Super::Tick(DeltaSeconds);
     pawn_events_.getPawnTickSignal().emit(DeltaSeconds);
 }

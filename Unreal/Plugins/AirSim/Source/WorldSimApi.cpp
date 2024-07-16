@@ -13,6 +13,9 @@
 #include <ctime>
 #include <algorithm>
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 WorldSimApi::WorldSimApi(ASimModeBase* simmode)
     : simmode_(simmode) {}
 
@@ -148,6 +151,7 @@ std::string WorldSimApi::spawnObject(const std::string& object_name, const std::
 
 AActor* WorldSimApi::createNewStaticMeshActor(const FActorSpawnParameters& spawn_params, const FTransform& actor_transform, const Vector3r& scale, UStaticMesh* static_mesh)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_createNewStaticMeshActor, FColor::Green);
     AActor* NewActor = simmode_->GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, spawn_params);
 
     if (IsValid(NewActor)) {
@@ -165,6 +169,7 @@ AActor* WorldSimApi::createNewStaticMeshActor(const FActorSpawnParameters& spawn
 
 AActor* WorldSimApi::createNewBPActor(const FActorSpawnParameters& spawn_params, const FTransform& actor_transform, const Vector3r& scale, UBlueprint* blueprint)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_createNewBPActor, FColor::Green);
     UClass* new_bp = static_cast<UClass*>(blueprint->GeneratedClass);
     AActor* new_actor = simmode_->GetWorld()->SpawnActor<AActor>(new_bp, FVector::ZeroVector, FRotator::ZeroRotator, spawn_params);
 
@@ -378,6 +383,7 @@ WorldSimApi::Vector3r WorldSimApi::getObjectScale(const std::string& object_name
 
 bool WorldSimApi::setObjectPose(const std::string& object_name, const WorldSimApi::Pose& pose, bool teleport)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setObjectPose, FColor::Green);
     bool result;
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &pose, teleport, &result]() {
         FTransform actor_transform = simmode_->getGlobalNedTransform().fromGlobalNed(pose);

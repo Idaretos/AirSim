@@ -12,6 +12,8 @@
 #include <vector>
 #include "common/common_utils/Utils.hpp"
 #include "common/ClockFactory.hpp"
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
 
 #define LOCTEXT_NAMESPACE "VehiclePawn"
 
@@ -238,6 +240,7 @@ void ACarPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ACarPawn::Tick(float Delta)
 {
+    SCOPED_NAMED_EVENT(ACarPawn_Tick, FColor::Blue);
     Super::Tick(Delta);
 
     // update physics material

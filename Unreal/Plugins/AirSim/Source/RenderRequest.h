@@ -8,6 +8,9 @@
 #include <memory>
 #include "common/Common.hpp"
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 class RenderRequest : public FRenderCommand
 {
 public:
@@ -57,6 +60,7 @@ public:
 
     void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent)
     {
+        SCOPED_NAMED_EVENT(RenderRequest_DoTask, FColor::Green);
         ExecuteTask();
     }
 

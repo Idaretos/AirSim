@@ -10,6 +10,9 @@
 #include <exception>
 #include "AirBlueprintLib.h"
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 //CinemAirSim
 APIPCamera::APIPCamera(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer
@@ -204,6 +207,7 @@ msr::airlib::ProjectionMatrix APIPCamera::getProjectionMatrix(const APIPCamera::
 
 void APIPCamera::Tick(float DeltaTime)
 {
+    SCOPED_NAMED_EVENT(APIPCamera_Tick, FColor::Blue);
     if (gimbal_stabilization_ > 0) {
         FRotator rotator = this->GetActorRotation();
         if (!std::isnan(gimbald_rotator_.Pitch))

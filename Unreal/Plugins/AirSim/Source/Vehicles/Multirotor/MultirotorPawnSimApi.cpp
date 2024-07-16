@@ -2,6 +2,8 @@
 #include "AirBlueprintLib.h"
 #include "vehicles/multirotor/MultiRotorParamsFactory.hpp"
 #include "UnrealSensors/UnrealSensorFactory.h"
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
 #include <exception>
 
 using namespace msr::airlib;
@@ -43,12 +45,23 @@ void MultirotorPawnSimApi::initialize()
 
 void MultirotorPawnSimApi::pawnTick(float dt)
 {
-    unused(dt);
+    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_pawnTick, FColor::Green);
+    // unused(dt);
     //calls to update* are handled by physics engine and in SimModeWorldBase
 }
 
+/**
+ * Updates the rendered state of the multirotor pawn.
+ *
+ * This function is responsible for updating the rendered state of the multirotor pawn.
+ * It performs various tasks such as handling reset, moving collision info from the rendering engine to the vehicle,
+ * updating rotor poses, and setting rotor states.
+ *
+ * @param dt The time step for the update.
+ */
 void MultirotorPawnSimApi::updateRenderedState(float dt)
 {
+    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_updateRenderedState, FColor::Green);
     //Utils::log("------Render tick-------");
 
     //if reset is pending then do it first, no need to do other things until next tick
@@ -88,6 +101,7 @@ void MultirotorPawnSimApi::updateRenderedState(float dt)
 
 void MultirotorPawnSimApi::updateRendering(float dt)
 {
+    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_updateRendering, FColor::Green);
     //if we did reset then don't worry about synchronizing states for this tick
     if (reset_pending_) {
         // Continue to wait for reset
@@ -102,6 +116,7 @@ void MultirotorPawnSimApi::updateRendering(float dt)
     }
 
     if (!VectorMath::hasNan(last_phys_pose_)) {
+        // SCOPED_NAMED_EVENT(MultirotorPawnSimApi_updateRendering_setPose, FColor::Green);
         if (pending_pose_status_ == PendingPoseStatus::RenderPending) {
             PawnSimApi::setPose(last_phys_pose_, pending_pose_collisions_);
             pending_pose_status_ = PendingPoseStatus::NonePending;
@@ -111,13 +126,13 @@ void MultirotorPawnSimApi::updateRendering(float dt)
     }
 
     //UAirBlueprintLib::LogMessage(TEXT("Collision (raw) Count:"), FString::FromInt(collision_response.collision_count_raw), LogDebugLevel::Unimportant);
-    UAirBlueprintLib::LogMessage(TEXT("Collision Count:"),
-                                 FString::FromInt(collision_response.collision_count_non_resting),
-                                 LogDebugLevel::Informational);
+    // UAirBlueprintLib::LogMessage(TEXT("Collision Count:"),
+    //                              FString::FromInt(collision_response.collision_count_non_resting),
+    //                              LogDebugLevel::Informational);
 
-    for (auto i = 0; i < vehicle_api_messages_.size(); ++i) {
-        UAirBlueprintLib::LogMessage(FString(vehicle_api_messages_[i].c_str()), TEXT(""), LogDebugLevel::Success, 30);
-    }
+    // for (auto i = 0; i < vehicle_api_messages_.size(); ++i) {
+    //     UAirBlueprintLib::LogMessage(FString(vehicle_api_messages_[i].c_str()), TEXT(""), LogDebugLevel::Success, 30);
+    // }
 
     try {
         vehicle_api_->sendTelemetry(dt);

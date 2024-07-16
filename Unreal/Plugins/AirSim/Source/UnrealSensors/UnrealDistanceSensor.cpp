@@ -14,6 +14,7 @@ UnrealDistanceSensor::UnrealDistanceSensor(const AirSimSettings::DistanceSetting
 
 msr::airlib::real_T UnrealDistanceSensor::getRayLength(const msr::airlib::Pose& pose)
 {
+    SCOPED_NAMED_EVENT(UnrealDistanceSensor_getRayLength, FColor::Green);
     //update ray tracing
     Vector3r start = pose.position;
     Vector3r end = start + VectorMath::rotateVector(VectorMath::front(), pose.orientation, true) * getParams().max_distance;

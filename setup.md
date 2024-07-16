@@ -90,7 +90,10 @@
     ~/UnrealEngine/Engine/Binaries/ThirdParty/Mono/Linux/bin/mono ~/UnrealEngine/Engine/Binaries/DotNET/UnrealBuildTool.exe Development Linux -Project=/home/rubis/AirSim/Unreal/Environments/Blocks/Blocks.uproject -TargetType=Editor -Progress -maxthreads=8
     ```
     ```bash
-    ~/UnrealEngine/Engine/Binaries/Linux/UE4Editor ~/AirSim/Unreal/Environments/Blocks/Blocks.uproject
+    ~/UnrealEngine/Engine/Binaries/Linux/UE4Editor ~/AirSim/Unreal/Environments/Blocks/Blocks.uproject -tracehost=127.0.0.1 -trace=frame,cpu -nullrhi -tracefile=/home/rubis/utrace/render_off
+    ```
+    ```bash
+    ~/UnrealEngine/Engine/Binaries/Linux/UE4Editor ~/AirSim/Unreal/Environments/Blocks/Blocks.uproject 
     ```
     
 # Unreal Insights

@@ -7,6 +7,9 @@
 #include "AirBlueprintLib.h"
 #include "Async/Async.h"
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 RenderRequest::RenderRequest(UGameViewportClient* game_viewport, std::function<void()>&& query_camera_pose_cb)
     : params_(nullptr), results_(nullptr), req_size_(0), wait_signal_(new msr::airlib::WorkerThreadSignal), game_viewport_(game_viewport), query_camera_pose_cb_(std::move(query_camera_pose_cb))
 {
@@ -139,11 +142,14 @@ FReadSurfaceDataFlags RenderRequest::setupRenderResource(const FTextureRenderTar
 
 void RenderRequest::ExecuteTask()
 {
+    SCOPED_NAMED_EVENT(RenderRequest_ExecuteTask, FColor::Green);
     if (params_ != nullptr && req_size_ > 0) {
+        SCOPED_NAMED_EVENT(RenderRequest_ExecuteTask_params_, FColor::Green);
         for (unsigned int i = 0; i < req_size_; ++i) {
             FRHICommandListImmediate& RHICmdList = GetImmediateCommandList_ForRenderCommand();
             auto rt_resource = params_[i]->render_target->GetRenderTargetResource();
             if (rt_resource != nullptr) {
+                SCOPED_NAMED_EVENT(RenderRequest_ExecuteTask_ReadPixels, FColor::Green);
                 const FTexture2DRHIRef& rhi_texture = rt_resource->GetRenderTargetTexture();
                 FIntPoint size;
                 auto flags = setupRenderResource(rt_resource, params_[i].get(), results_[i].get(), size);
@@ -167,6 +173,9 @@ void RenderRequest::ExecuteTask()
                         0,
                         0);
                 }
+            }
+            else {
+                SCOPED_NAMED_EVENT(RenderRequest_ExecuteTask_NoResource, FColor::Green);
             }
 
             results_[i]->time_stamp = msr::airlib::ClockFactory::get()->nowNanos();

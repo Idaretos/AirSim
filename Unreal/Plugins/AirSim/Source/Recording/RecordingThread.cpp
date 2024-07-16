@@ -7,6 +7,9 @@
 #include "RenderRequest.h"
 #include "PIPCamera.h"
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 std::unique_ptr<FRecordingThread> FRecordingThread::running_instance_;
 std::unique_ptr<FRecordingThread> FRecordingThread::finishing_instance_;
 msr::airlib::WorkerThreadSignal FRecordingThread::finishing_signal_;
@@ -102,6 +105,7 @@ bool FRecordingThread::Init()
 
 uint32 FRecordingThread::Run()
 {
+    SCOPED_NAMED_EVENT(FRecordingThread_Run, FColor::Green);
     while (stop_task_counter_.GetValue() == 0) {
         //make sure all vars are set up
         if (is_ready_) {

@@ -14,6 +14,9 @@
 #include <Kismet/KismetMathLibrary.h>
 #include <Engine/EngineTypes.h>
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 UDetectionComponent::UDetectionComponent()
     : max_distance_to_camera_(20000.f)
 {
@@ -32,6 +35,7 @@ void UDetectionComponent::BeginPlay()
 
 void UDetectionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+    SCOPED_NAMED_EVENT(UDetectionComponent_TickComponent, FColor::Red);
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 

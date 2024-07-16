@@ -2,6 +2,10 @@
 #include "GameFramework/PlayerController.h"
 #include "AirBlueprintLib.h"
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
+
 ACameraDirector::ACameraDirector()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -26,6 +30,7 @@ void ACameraDirector::BeginPlay()
 
 void ACameraDirector::Tick(float DeltaTime)
 {
+    SCOPED_NAMED_EVENT(ACameraDirector_Tick, FColor::Green);
     Super::Tick(DeltaTime);
 
     if (mode_ == ECameraDirectorMode::CAMERA_DIRECTOR_MODE_MANUAL) {

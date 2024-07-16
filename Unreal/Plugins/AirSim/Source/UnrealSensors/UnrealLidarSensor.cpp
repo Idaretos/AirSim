@@ -6,6 +6,8 @@
 #include "common/Common.hpp"
 #include "NedTransform.h"
 #include "DrawDebugHelpers.h"
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
 
 // ctor
 UnrealLidarSensor::UnrealLidarSensor(const AirSimSettings::LidarSetting& setting,
@@ -18,6 +20,7 @@ UnrealLidarSensor::UnrealLidarSensor(const AirSimSettings::LidarSetting& setting
 // initializes information based on lidar configuration
 void UnrealLidarSensor::createLasers()
 {
+    SCOPED_NAMED_EVENT(UnrealLidarSensor_createLasers, FColor::Green);
     msr::airlib::LidarSimpleParams params = getParams();
 
     const auto number_of_lasers = params.number_of_channels;
@@ -43,6 +46,7 @@ void UnrealLidarSensor::createLasers()
 void UnrealLidarSensor::getPointCloud(const msr::airlib::Pose& lidar_pose, const msr::airlib::Pose& vehicle_pose,
                                       const msr::airlib::TTimeDelta delta_time, msr::airlib::vector<msr::airlib::real_T>& point_cloud, msr::airlib::vector<int>& segmentation_cloud)
 {
+    SCOPED_NAMED_EVENT(UnrealLidarSensor_getPointCloud, FColor::Green);
     point_cloud.clear();
     segmentation_cloud.clear();
 
@@ -106,6 +110,7 @@ bool UnrealLidarSensor::shootLaser(const msr::airlib::Pose& lidar_pose, const ms
                                    const uint32 laser, const float horizontal_angle, const float vertical_angle,
                                    const msr::airlib::LidarSimpleParams params, Vector3r& point, int& segmentationID)
 {
+    SCOPED_NAMED_EVENT(UnrealLidarSensor_shootLaser, FColor::Green);
     // start position
     Vector3r start = VectorMath::add(lidar_pose, vehicle_pose).position;
 

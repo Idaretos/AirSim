@@ -14,13 +14,20 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "DrawDebugHelpers.h"
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
+
 PawnSimApi::PawnSimApi(const Params& params)
     : params_(params), ned_transform_(params.pawn, *params.global_transform)
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_ctor, FColor::Red);
+    og_orientation_ = params.pawn->GetActorRotation().Quaternion();
 }
 
 void PawnSimApi::initialize()
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_initialize, FColor::Red);
     Kinematics::State initial_kinematic_state = Kinematics::State::zero();
 
     initial_kinematic_state.pose = getPose();
@@ -73,6 +80,7 @@ void PawnSimApi::setStartPosition(const FVector& position, const FRotator& rotat
 
 void PawnSimApi::pawnTick(float dt)
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_pawnTick, FColor::Red);
     //default behavior is to call update every tick
     //for custom physics engine, this method should be overridden and update should be
     //called from every physics tick
@@ -146,6 +154,7 @@ void PawnSimApi::createCamerasFromSettings()
 void PawnSimApi::onCollision(class UPrimitiveComponent* MyComp, class AActor* Other, class UPrimitiveComponent* OtherComp,
                              bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_onCollision, FColor::Red);
     // Deflect along the surface when we collide.
     //FRotator CurrentRotation = GetActorRotation(RootComponent);
     //SetActorRotation(FQuat::Slerp(CurrentRotation.Quaternion(), HitNormal.ToOrientationQuat(), 0.025f));
@@ -436,6 +445,7 @@ PawnSimApi::Pose PawnSimApi::toPose(const FVector& u_position, const FQuat& u_qu
 
 void PawnSimApi::setPose(const Pose& pose, bool ignore_collision)
 {
+    // SCOPED_NAMED_EVENT(PawnSimApi_setPose, FColor::Red);
     UAirBlueprintLib::RunCommandOnGameThread([this, pose, ignore_collision]() {
         setPoseInternal(pose, ignore_collision);
     },
@@ -444,12 +454,14 @@ void PawnSimApi::setPose(const Pose& pose, bool ignore_collision)
 
 void PawnSimApi::setPoseInternal(const Pose& pose, bool ignore_collision)
 {
+    // SCOPED_NAMED_EVENT(PawnSimApi_setPoseInternal, FColor::Red);
     //translate to new PawnSimApi position & orientation from NED to NEU
     FVector position = ned_transform_.fromLocalNed(pose.position);
     state_.current_position = position;
 
     //quaternion formula comes from http://stackoverflow.com/a/40334755/207661
-    FQuat orientation = ned_transform_.fromNed(pose.orientation);
+    // FQuat orientation = ned_transform_.fromNed(pose.orientation);
+    FQuat orientation = og_orientation_;
 
     bool enable_teleport = ignore_collision || canTeleportWhileMove();
 
@@ -497,6 +509,7 @@ bool PawnSimApi::canTeleportWhileMove() const
 
 void PawnSimApi::updateKinematics(float dt)
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_updateKinematics, FColor::Red);
     //update kinematics from pawn's movement instead of physics engine
 
     auto next_kinematics = kinematics_->getState();

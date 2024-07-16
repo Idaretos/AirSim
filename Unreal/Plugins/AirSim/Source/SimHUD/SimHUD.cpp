@@ -10,6 +10,9 @@
 #include "common/AirSimSettings.hpp"
 #include <stdexcept>
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 ASimHUD::ASimHUD()
 {
     static ConstructorHelpers::FClassFinder<UUserWidget> hud_widget_class(TEXT("WidgetBlueprint'/AirSim/Blueprints/BP_SimHUDWidget'"));
@@ -45,6 +48,7 @@ void ASimHUD::BeginPlay()
 
 void ASimHUD::Tick(float DeltaSeconds)
 {
+    SCOPED_NAMED_EVENT(ASimHUD_Tick, FColor::Blue);
     if (simmode_ && simmode_->EnableReport)
         widget_->updateDebugReport(simmode_->getDebugReport());
 }

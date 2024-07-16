@@ -103,6 +103,7 @@ protected: //additional interface for derived class
     virtual void pawnTick(float dt);
     void setPoseInternal(const Pose& pose, bool ignore_collision);
     virtual msr::airlib::VehicleApiBase* getVehicleApiBase() const;
+    FQuat og_orientation_ = FQuat(0.0,0.0,0.0,0.0);
     msr::airlib::Kinematics* getKinematics();
     msr::airlib::Environment* getEnvironment();
 

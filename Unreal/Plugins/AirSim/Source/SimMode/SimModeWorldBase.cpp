@@ -3,6 +3,8 @@
 #include "physics/ExternalPhysicsEngine.hpp"
 #include <exception>
 #include "AirBlueprintLib.h"
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
 
 void ASimModeWorldBase::BeginPlay()
 {
@@ -144,15 +146,17 @@ void ASimModeWorldBase::updateDebugReport(msr::airlib::StateReporterWrapper& deb
 
 void ASimModeWorldBase::Tick(float DeltaSeconds)
 {
+    SCOPED_NAMED_EVENT(ASimModeWorldBase_Tick, FColor::Green);
     { //keep this lock as short as possible
+        {
+        SCOPED_NAMED_EVENT(ASimModeWorldBase_Tick_Lock, FColor::Green);
         physics_world_->lock();
-
+        }
         physics_world_->enableStateReport(EnableReport);
         physics_world_->updateStateReport();
-
+        
         for (auto& api : getApiProvider()->getVehicleSimApis())
             api->updateRenderedState(DeltaSeconds);
-
         physics_world_->unlock();
     }
 

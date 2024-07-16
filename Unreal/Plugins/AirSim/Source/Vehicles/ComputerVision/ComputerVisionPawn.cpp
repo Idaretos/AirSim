@@ -2,6 +2,9 @@
 #include "Engine/World.h"
 #include "ManualPoseController.h"
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
+
 AComputerVisionPawn::AComputerVisionPawn()
 {
     static ConstructorHelpers::FClassFinder<APIPCamera> pip_camera_class(TEXT("Blueprint'/AirSim/Blueprints/BP_PIPCamera'"));
@@ -109,6 +112,7 @@ void AComputerVisionPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AComputerVisionPawn::Tick(float Delta)
 {
+    SCOPED_NAMED_EVENT(AComputerVisionPawn_Tick, FColor::Green)
     Super::Tick(Delta);
     pawn_events_.getPawnTickSignal().emit(Delta);
 
