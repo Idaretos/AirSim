@@ -13,6 +13,9 @@
 #include <chrono>
 #include <time.h>
 #include <sched.h>
+#include <unistd.h>
+#include <string>
+#include <cstdio>
 
 
 namespace msr
@@ -278,6 +281,18 @@ namespace airlib
                                        float lookahead, float adaptive_lookahead)
     {
         SingleTaskCall lock(this);
+        // unsigned int begintime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+        //     std::chrono::system_clock::now().time_since_epoch()).count());
+
+        // // begintime + 10ms
+        // unsigned int endtime = begintime + 1000000;
+        // std::ofstream logfile("/home/rubis/Control_AirSim/log/loop.txt");
+        // while (endtime > static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+        //     std::chrono::system_clock::now().time_since_epoch()).count())) {
+        //     logfile << "loop" << std::endl;
+        //     // do nothing
+        // }
+        // logfile.close();
 
         //validate path size
         if (path.size() == 0) {
@@ -318,7 +333,17 @@ namespace airlib
             PathSegment path_seg(path3d.at(i), point, velocity, path_length);
             path_length += path_seg.seg_length;
             path_segs.push_back(path_seg);
+            // unsigned int wheredelaybegin = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            //     std::chrono::system_clock::now().time_since_epoch()).count());
             path3d.push_back(point);
+            // unsigned int wheredelayend = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            //     std::chrono::system_clock::now().time_since_epoch()).count());
+            // std::FILE* wd = std::fopen("/home/rubis/Control_AirSim/log/wheredelay.csv", "a");
+            // std::fprintf(wd, "%d,%d,%d,%d,%lu,moveOnPath_%lu\n", sched_getcpu(), wheredelaybegin, wheredelayend, wheredelayend - wheredelaybegin, path3d.size(), path.size());
+            // std::fclose(wd);
+            // std::ofstream wd("/home/rubis/Control_AirSim/log/wheredelay.txt", std::ios::app);
+            // wd << sched_getcpu() << "," << wheredelaybegin << "," << wheredelayend << "," << wheredelayend - wheredelaybegin << ",moveOnPath_" << path.size() << std::endl;
+            // wd.close();
         }
         //add last segment as zero length segment so we have equal number of segments and points.
         //path_segs[i] refers to segment that starts at point i
@@ -480,15 +505,29 @@ namespace airlib
 
         SingleTaskCall lock(this);
 
-        vector<Vector3r> path{ Vector3r(x, y, z) };
-        bool RetVal = moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+        // vector<Vector3r> path{ Vector3r(x, y, z) };
+        // bool RetVal = moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+
+        unsigned int whileend = begintime + 2000000;
+        while (whileend > static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count())) {
+            // do nothing
+        }
+        bool RetVal = true;
 
         unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count());
+
         unsigned int elapsedtime = endtime - begintime;
+
         std::ofstream myfile("/home/rubis/Control_AirSim/log/AirSimAPIonly.txt", std::ios::app);
         myfile << sched_getcpu() << "," << begintime << "," << endtime << "," << elapsedtime << ",moveToPosition" << std::endl;
         myfile.close();
+
+        std::FILE* wd = std::fopen("/home/rubis/Control_AirSim/log/wheredelay.csv", "a");
+        std::fprintf(wd, "%d,%d,%d,%d,%d,moveToPosition\n", sched_getcpu(), begintime, endtime, elapsedtime, 0);
+        std::fclose(wd);
+
         return RetVal;
     }
 

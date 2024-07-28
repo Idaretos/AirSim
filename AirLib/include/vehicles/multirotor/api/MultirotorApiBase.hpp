@@ -366,6 +366,23 @@ namespace airlib
         float approx_zero_angular_vel_ = 0.01f;
         RotorStates rotor_states_;
     };
+    class Profiler {
+    public:
+        Profiler(const std::string& name) : name(name), start(std::chrono::high_resolution_clock::now()) {}
+
+        ~Profiler() {
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> duration = end - start;
+            // std::cout << "Code block [" << name << "] took " << duration.count() << " seconds.\n";
+            std::FILE* prof = std::fopen("/home/rubis/Control_AirSim/log/prof.csv", "a");
+            std::fprintf(prof, "%s, %f\n", name.c_str(), duration.count());
+            std::fclose(prof);
+        }
+
+    private:
+        std::string name;
+        std::chrono::high_resolution_clock::time_point start;
+    };
 }
 } //namespace
 #endif
