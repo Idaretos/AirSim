@@ -260,6 +260,7 @@ std::string ASimHUD::getSimModeFromUser()
 
 void ASimHUD::loadLevel()
 {
+    SCOPED_NAMED_EVENT(ASimHUD_loadLevel, FColor::Blue);
     UAirBlueprintLib::RunCommandOnGameThread([&]() { this->map_changed_ = UAirBlueprintLib::loadLevel(this->GetWorld(), FString(AirSimSettings::singleton().level_name.c_str())); }, true);
 }
 

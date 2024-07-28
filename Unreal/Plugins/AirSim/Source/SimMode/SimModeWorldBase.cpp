@@ -169,6 +169,7 @@ void ASimModeWorldBase::Tick(float DeltaSeconds)
 
 void ASimModeWorldBase::reset()
 {
+    SCOPED_NAMED_EVENT(ASimModeWorldBase_reset, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([this]() {
         physics_world_->reset();
     },

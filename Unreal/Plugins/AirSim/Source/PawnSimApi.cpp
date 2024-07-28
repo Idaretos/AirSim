@@ -275,6 +275,7 @@ int PawnSimApi::getCameraCount()
 
 bool PawnSimApi::testLineOfSightToPoint(const msr::airlib::GeoPoint& lla) const
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_testLineOfSightToPoint, FColor::Red);
     bool hit;
 
     // We need to run this code on the main game thread, since it iterates over actors
@@ -445,7 +446,7 @@ PawnSimApi::Pose PawnSimApi::toPose(const FVector& u_position, const FQuat& u_qu
 
 void PawnSimApi::setPose(const Pose& pose, bool ignore_collision)
 {
-    // SCOPED_NAMED_EVENT(PawnSimApi_setPose, FColor::Red);
+    SCOPED_NAMED_EVENT(PawnSimApi_setPose, FColor::Red);
     UAirBlueprintLib::RunCommandOnGameThread([this, pose, ignore_collision]() {
         setPoseInternal(pose, ignore_collision);
     },

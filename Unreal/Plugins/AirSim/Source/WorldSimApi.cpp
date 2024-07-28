@@ -21,6 +21,7 @@ WorldSimApi::WorldSimApi(ASimModeBase* simmode)
 
 bool WorldSimApi::loadLevel(const std::string& level_name)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_loadLevel, FColor::Green);
     bool success;
     using namespace std::chrono_literals;
 
@@ -44,6 +45,7 @@ bool WorldSimApi::loadLevel(const std::string& level_name)
 
 void WorldSimApi::spawnPlayer()
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_spawnPlayer, FColor::Green);
     using namespace std::chrono_literals;
     UE_LOG(LogTemp, Log, TEXT("spawning player"));
     bool success{ false };
@@ -64,6 +66,7 @@ void WorldSimApi::spawnPlayer()
 
 bool WorldSimApi::destroyObject(const std::string& object_name)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_destroyObject, FColor::Green);
     bool result{ false };
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &result]() {
         AActor* actor = UAirBlueprintLib::FindActor<AActor>(simmode_, FString(object_name.c_str()));
@@ -93,6 +96,7 @@ std::vector<std::string> WorldSimApi::listAssets() const
 
 std::string WorldSimApi::spawnObject(const std::string& object_name, const std::string& load_object, const WorldSimApi::Pose& pose, const WorldSimApi::Vector3r& scale, bool physics_enabled, bool is_blueprint)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_spawnObject, FColor::Green);
     FString asset_name(load_object.c_str());
     FAssetData* load_asset = simmode_->asset_map.Find(asset_name);
 
@@ -181,6 +185,7 @@ AActor* WorldSimApi::createNewBPActor(const FActorSpawnParameters& spawn_params,
 
 bool WorldSimApi::setLightIntensity(const std::string& light_name, float intensity)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setLightIntensity, FColor::Green);
     bool result = false;
     UAirBlueprintLib::RunCommandOnGameThread([this, &light_name, &intensity, &result]() {
         AActor* light_actor = simmode_->scene_object_map.FindRef(FString(light_name.c_str()));
@@ -269,6 +274,7 @@ bool WorldSimApi::isPaused() const
 
 void WorldSimApi::reset()
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_reset, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([this]() {
         simmode_->reset();
     },
@@ -298,6 +304,7 @@ void WorldSimApi::setTimeOfDay(bool is_enabled, const std::string& start_datetim
 
 bool WorldSimApi::addVehicle(const std::string& vehicle_name, const std::string& vehicle_type, const Pose& pose, const std::string& pawn_path)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_addVehicle, FColor::Green);
     bool result;
     UAirBlueprintLib::RunCommandOnGameThread([&]() {
         result = simmode_->createVehicleAtRuntime(vehicle_name, vehicle_type, pose, pawn_path);
@@ -309,6 +316,7 @@ bool WorldSimApi::addVehicle(const std::string& vehicle_name, const std::string&
 
 bool WorldSimApi::setSegmentationObjectID(const std::string& mesh_name, int object_id, bool is_name_regex)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setSegmentationObjectID, FColor::Green);
     bool success;
     UAirBlueprintLib::RunCommandOnGameThread([mesh_name, object_id, is_name_regex, &success]() {
         success = UAirBlueprintLib::SetMeshStencilID(mesh_name, object_id, is_name_regex);
@@ -319,6 +327,7 @@ bool WorldSimApi::setSegmentationObjectID(const std::string& mesh_name, int obje
 
 int WorldSimApi::getSegmentationObjectID(const std::string& mesh_name) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getSegmentationObjectID, FColor::Green);
     int result;
     UAirBlueprintLib::RunCommandOnGameThread([&mesh_name, &result]() {
         result = UAirBlueprintLib::GetMeshStencilID(mesh_name);
@@ -335,6 +344,7 @@ void WorldSimApi::printLogMessage(const std::string& message,
 
 std::vector<std::string> WorldSimApi::listSceneObjects(const std::string& name_regex) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_listSceneObjects, FColor::Green);
     std::vector<std::string> result;
     UAirBlueprintLib::RunCommandOnGameThread([this, &name_regex, &result]() {
         result = UAirBlueprintLib::ListMatchingActors(simmode_, name_regex);
@@ -345,6 +355,7 @@ std::vector<std::string> WorldSimApi::listSceneObjects(const std::string& name_r
 
 bool WorldSimApi::runConsoleCommand(const std::string& command)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_runConsoleCommand, FColor::Green);
     bool succeeded = false;
     UAirBlueprintLib::RunCommandOnGameThread([this, &command, &succeeded]() {
         FString fStringCommand(command.c_str());
@@ -356,6 +367,7 @@ bool WorldSimApi::runConsoleCommand(const std::string& command)
 
 WorldSimApi::Pose WorldSimApi::getObjectPose(const std::string& object_name) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getObjectPose, FColor::Green);
     Pose result;
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &result]() {
         // AActor* actor = UAirBlueprintLib::FindActor<AActor>(simmode_, FString(object_name.c_str()));
@@ -370,6 +382,7 @@ WorldSimApi::Pose WorldSimApi::getObjectPose(const std::string& object_name) con
 
 WorldSimApi::Vector3r WorldSimApi::getObjectScale(const std::string& object_name) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getObjectScale, FColor::Green);
     Vector3r result;
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &result]() {
         // AActor* actor = UAirBlueprintLib::FindActor<AActor>(simmode_, FString(object_name.c_str()));
@@ -404,6 +417,7 @@ bool WorldSimApi::setObjectPose(const std::string& object_name, const WorldSimAp
 
 bool WorldSimApi::setObjectScale(const std::string& object_name, const Vector3r& scale)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setObjectScale, FColor::Green);
     bool result;
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &scale, &result]() {
         // AActor* actor = UAirBlueprintLib::FindActor<AActor>(simmode_, FString(object_name.c_str()));
@@ -421,6 +435,7 @@ bool WorldSimApi::setObjectScale(const std::string& object_name, const Vector3r&
 
 void WorldSimApi::enableWeather(bool enable)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_enableWeather, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([this, enable]() {
         UWeatherLib::setWeatherEnabled(simmode_->GetWorld(), enable);
     },
@@ -429,6 +444,7 @@ void WorldSimApi::enableWeather(bool enable)
 
 void WorldSimApi::setWeatherParameter(WeatherParameter param, float val)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setWeatherParameter, FColor::Green);
     unsigned char param_n = static_cast<unsigned char>(msr::airlib::Utils::toNumeric<WeatherParameter>(param));
     EWeatherParamScalar param_e = msr::airlib::Utils::toEnum<EWeatherParamScalar>(param_n);
 
@@ -440,6 +456,7 @@ void WorldSimApi::setWeatherParameter(WeatherParameter param, float val)
 
 std::unique_ptr<std::vector<std::string>> WorldSimApi::swapTextures(const std::string& tag, int tex_id, int component_id, int material_id)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_swapTextures, FColor::Green);
     auto swappedObjectNames = std::make_unique<std::vector<std::string>>();
     UAirBlueprintLib::RunCommandOnGameThread([this, &tag, tex_id, component_id, material_id, &swappedObjectNames]() {
         //Split the tag string into individual tags.
@@ -476,6 +493,7 @@ std::unique_ptr<std::vector<std::string>> WorldSimApi::swapTextures(const std::s
 
 bool WorldSimApi::setObjectMaterialFromTexture(const std::string& object_name, const std::string& texture_path, const int component_id)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setObjectMaterialFromTexture, FColor::Green);
     bool success = false;
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &texture_path, &success, &component_id]() {
         if (!IsValid(simmode_->domain_rand_material_)) {
@@ -511,6 +529,7 @@ bool WorldSimApi::setObjectMaterialFromTexture(const std::string& object_name, c
 
 bool WorldSimApi::setObjectMaterial(const std::string& object_name, const std::string& material_name, const int component_id)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setObjectMaterial, FColor::Green);
     bool success = false;
     UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &material_name, &success, &component_id]() {
         AActor* actor = UAirBlueprintLib::FindActor<AActor>(simmode_, FString(object_name.c_str()));
@@ -545,6 +564,7 @@ bool WorldSimApi::setObjectMaterial(const std::string& object_name, const std::s
 //----------- Plotting APIs ----------/
 void WorldSimApi::simFlushPersistentMarkers()
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simFlushPersistentMarkers, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([this]() {
         FlushPersistentDebugLines(simmode_->GetWorld());
     },
@@ -553,6 +573,7 @@ void WorldSimApi::simFlushPersistentMarkers()
 
 void WorldSimApi::simPlotPoints(const std::vector<Vector3r>& points, const std::vector<float>& color_rgba, float size, float duration, bool is_persistent)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotPoints, FColor::Green);
     FColor color = FLinearColor{ color_rgba[0], color_rgba[1], color_rgba[2], color_rgba[3] }.ToFColor(true);
 
     UAirBlueprintLib::RunCommandOnGameThread([this, &points, &color, size, duration, is_persistent]() {
@@ -571,6 +592,7 @@ void WorldSimApi::simPlotPoints(const std::vector<Vector3r>& points, const std::
 // plot line for points 0-1, 1-2, 2-3
 void WorldSimApi::simPlotLineStrip(const std::vector<Vector3r>& points, const std::vector<float>& color_rgba, float thickness, float duration, bool is_persistent)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotLineStrip, FColor::Green);
     FColor color = FLinearColor{ color_rgba[0], color_rgba[1], color_rgba[2], color_rgba[3] }.ToFColor(true);
 
     UAirBlueprintLib::RunCommandOnGameThread([this, &points, &color, thickness, duration, is_persistent]() {
@@ -591,6 +613,7 @@ void WorldSimApi::simPlotLineStrip(const std::vector<Vector3r>& points, const st
 // plot line for points 0-1, 2-3, 4-5... must be even number of points
 void WorldSimApi::simPlotLineList(const std::vector<Vector3r>& points, const std::vector<float>& color_rgba, float thickness, float duration, bool is_persistent)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotLineList, FColor::Green);
     FColor color = FLinearColor{ color_rgba[0], color_rgba[1], color_rgba[2], color_rgba[3] }.ToFColor(true);
 
     UAirBlueprintLib::RunCommandOnGameThread([this, &points, &color, thickness, duration, is_persistent]() {
@@ -610,6 +633,7 @@ void WorldSimApi::simPlotLineList(const std::vector<Vector3r>& points, const std
 
 void WorldSimApi::simPlotArrows(const std::vector<Vector3r>& points_start, const std::vector<Vector3r>& points_end, const std::vector<float>& color_rgba, float thickness, float arrow_size, float duration, bool is_persistent)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotArrows, FColor::Green);
     // assert points_start.size() == poinst_end.size()
     FColor color = FLinearColor{ color_rgba[0], color_rgba[1], color_rgba[2], color_rgba[3] }.ToFColor(true);
 
@@ -631,6 +655,7 @@ void WorldSimApi::simPlotArrows(const std::vector<Vector3r>& points_start, const
 
 void WorldSimApi::simPlotStrings(const std::vector<std::string>& strings, const std::vector<Vector3r>& positions, float scale, const std::vector<float>& color_rgba, float duration)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotStrings, FColor::Green);
     // assert positions.size() == strings.size()
     FColor color = FLinearColor{ color_rgba[0], color_rgba[1], color_rgba[2], color_rgba[3] }.ToFColor(true);
 
@@ -651,6 +676,7 @@ void WorldSimApi::simPlotStrings(const std::vector<std::string>& strings, const 
 
 void WorldSimApi::simPlotTransforms(const std::vector<Pose>& poses, float scale, float thickness, float duration, bool is_persistent)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotTransforms, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([this, &poses, scale, thickness, duration, is_persistent]() {
         for (const auto& pose : poses) {
             DrawDebugCoordinateSystem(simmode_->GetWorld(),
@@ -668,6 +694,7 @@ void WorldSimApi::simPlotTransforms(const std::vector<Pose>& poses, float scale,
 
 void WorldSimApi::simPlotTransformsWithNames(const std::vector<Pose>& poses, const std::vector<std::string>& names, float tf_scale, float tf_thickness, float text_scale, const std::vector<float>& text_color_rgba, float duration)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_simPlotTransformsWithNames, FColor::Green);
     // assert poses.size() == names.size()
     FColor color = FLinearColor{ text_color_rgba[0], text_color_rgba[1], text_color_rgba[2], text_color_rgba[3] }.ToFColor(true);
 
@@ -696,6 +723,7 @@ void WorldSimApi::simPlotTransformsWithNames(const std::vector<Pose>& poses, con
 
 std::vector<WorldSimApi::MeshPositionVertexBuffersResponse> WorldSimApi::getMeshPositionVertexBuffers() const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getMeshPositionVertexBuffers, FColor::Green);
     std::vector<WorldSimApi::MeshPositionVertexBuffersResponse> responses;
     UAirBlueprintLib::RunCommandOnGameThread([&responses]() {
         responses = UAirBlueprintLib::GetStaticMeshComponents();
@@ -727,6 +755,7 @@ void WorldSimApi::setWind(const Vector3r& wind) const
 
 std::vector<std::string> WorldSimApi::listVehicles() const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_listVehicles, FColor::Green);
     std::vector<std::string> vehicle_names;
 
     UAirBlueprintLib::RunCommandOnGameThread([this, &vehicle_names]() {
@@ -748,6 +777,7 @@ std::string WorldSimApi::getSettingsString() const
 
 bool WorldSimApi::testLineOfSightBetweenPoints(const msr::airlib::GeoPoint& lla1, const msr::airlib::GeoPoint& lla2) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_testLineOfSightBetweenPoints, FColor::Green);
     bool hit;
 
     // We need to run this code on the main game thread, since it iterates over actors
@@ -791,6 +821,7 @@ bool WorldSimApi::testLineOfSightBetweenPoints(const msr::airlib::GeoPoint& lla1
 
 std::vector<msr::airlib::GeoPoint> WorldSimApi::getWorldExtents() const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getWorldExtents, FColor::Green);
     msr::airlib::GeoPoint lla_min_out;
     msr::airlib::GeoPoint lla_max_out;
     // We need to run this code on the main game thread, since it iterates over actors
@@ -843,6 +874,7 @@ std::vector<msr::airlib::GeoPoint> WorldSimApi::getWorldExtents() const
 }
 msr::airlib::CameraInfo WorldSimApi::getCameraInfo(const CameraDetails& camera_details) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getCameraInfo, FColor::Green);
     msr::airlib::CameraInfo info;
     const APIPCamera* camera = simmode_->getCamera(camera_details);
     UAirBlueprintLib::RunCommandOnGameThread([camera, &info]() {
@@ -855,6 +887,7 @@ msr::airlib::CameraInfo WorldSimApi::getCameraInfo(const CameraDetails& camera_d
 
 void WorldSimApi::setCameraPose(const msr::airlib::Pose& pose, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setCameraPose, FColor::Green);
     APIPCamera* camera = simmode_->getCamera(camera_details);
     UAirBlueprintLib::RunCommandOnGameThread([camera, &pose]() {
         camera->setCameraPose(pose);
@@ -864,6 +897,7 @@ void WorldSimApi::setCameraPose(const msr::airlib::Pose& pose, const CameraDetai
 
 void WorldSimApi::setCameraFoV(float fov_degrees, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setCameraFoV, FColor::Green);
     APIPCamera* camera = simmode_->getCamera(camera_details);
     UAirBlueprintLib::RunCommandOnGameThread([camera, &fov_degrees]() {
         camera->setCameraFoV(fov_degrees);
@@ -873,6 +907,7 @@ void WorldSimApi::setCameraFoV(float fov_degrees, const CameraDetails& camera_de
 
 void WorldSimApi::setDistortionParam(const std::string& param_name, float value, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setDistortionParam, FColor::Green);
     APIPCamera* camera = simmode_->getCamera(camera_details);
     UAirBlueprintLib::RunCommandOnGameThread([camera, &param_name, &value]() {
         camera->setDistortionParam(param_name, value);
@@ -882,6 +917,7 @@ void WorldSimApi::setDistortionParam(const std::string& param_name, float value,
 
 std::vector<float> WorldSimApi::getDistortionParams(const CameraDetails& camera_details) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getDistortionParams, FColor::Green);
     std::vector<float> param_values;
     const APIPCamera* camera = simmode_->getCamera(camera_details);
     UAirBlueprintLib::RunCommandOnGameThread([camera, &param_values]() {
@@ -1000,6 +1036,7 @@ std::string WorldSimApi::getCurrentFieldOfView(const CameraDetails& camera_detai
 
 void WorldSimApi::addDetectionFilterMeshName(ImageCaptureBase::ImageType image_type, const std::string& mesh_name, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_addDetectionFilterMeshName, FColor::Green);
     const APIPCamera* camera = simmode_->getCamera(camera_details);
 
     UAirBlueprintLib::RunCommandOnGameThread([camera, image_type, &mesh_name]() {
@@ -1010,6 +1047,7 @@ void WorldSimApi::addDetectionFilterMeshName(ImageCaptureBase::ImageType image_t
 
 void WorldSimApi::setDetectionFilterRadius(ImageCaptureBase::ImageType image_type, float radius_cm, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_setDetectionFilterRadius, FColor::Green);
     const APIPCamera* camera = simmode_->getCamera(camera_details);
 
     UAirBlueprintLib::RunCommandOnGameThread([camera, image_type, radius_cm]() {
@@ -1020,6 +1058,7 @@ void WorldSimApi::setDetectionFilterRadius(ImageCaptureBase::ImageType image_typ
 
 void WorldSimApi::clearDetectionMeshNames(ImageCaptureBase::ImageType image_type, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_clearDetectionMeshNames, FColor::Green);
     const APIPCamera* camera = simmode_->getCamera(camera_details);
 
     UAirBlueprintLib::RunCommandOnGameThread([camera, image_type]() {
@@ -1030,6 +1069,7 @@ void WorldSimApi::clearDetectionMeshNames(ImageCaptureBase::ImageType image_type
 
 std::vector<msr::airlib::DetectionInfo> WorldSimApi::getDetections(ImageCaptureBase::ImageType image_type, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getDetections, FColor::Green);
     std::vector<msr::airlib::DetectionInfo> result;
 
     const APIPCamera* camera = simmode_->getCamera(camera_details);

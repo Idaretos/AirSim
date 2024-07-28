@@ -27,6 +27,8 @@
 #include "AssetRegistryModule.h"
 #include "DetectionComponent.h"
 
+#include "Misc/AssertionMacros.h"
+#include "CoreMinimal.h"
 /*
 //TODO: change naming conventions to same as other files?
 Naming conventions in this file:
@@ -237,6 +239,7 @@ void UAirBlueprintLib::LogMessage(const FString& prefix, const FString& suffix, 
 
 void UAirBlueprintLib::GenerateAssetRegistryMap(const UObject* context, TMap<FString, FAssetData>& asset_map)
 {
+    SCOPED_NAMED_EVENT(UAirBlueprintLib_GenerateAssetRegistryMap, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([context, &asset_map]() {
         FARFilter Filter;
         Filter.ClassNames.Add(UStaticMesh::StaticClass()->GetFName());
@@ -274,6 +277,7 @@ void UAirBlueprintLib::GenerateActorMap(const UObject* context, TMap<FString, AA
 
 void UAirBlueprintLib::setUnrealClockSpeed(const AActor* context, float clock_speed)
 {
+    SCOPED_NAMED_EVENT(UAirBlueprintLib_setUnrealClockSpeed, FColor::Green);
     UAirBlueprintLib::RunCommandOnGameThread([context, clock_speed]() {
         auto* world_settings = context->GetWorldSettings();
         if (world_settings)

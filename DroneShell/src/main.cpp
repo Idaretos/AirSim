@@ -453,6 +453,10 @@ namespace airlib
 
         bool execute(const DroneCommandParameters& params)
         {
+            // begin time in microseconds
+            unsigned int begintime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count());
+
             CommandContext* context = params.context;
             float x = getSwitch("-x").toFloat();
             float y = getSwitch("-y").toFloat();
@@ -476,6 +480,13 @@ namespace airlib
                 MoveToPosition(context, x, y, z, velocity, duration, drivetrain, yawMode, lookahead, adaptive_lookahead);
             });
 
+            unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count());
+            unsigned int elapsedtime = endtime - begintime;
+            std::ofstream myfile("/home/rubis/Control_AirSim/log/AirSimAPI.txt", std::ios::app);
+            myfile << std::this_thread::get_id() << "," << begintime << "," << endtime << "," << elapsedtime << ",MoveToPositionCommand_execute" << std::endl;
+            myfile.close();
+            
             return false;
         }
     };

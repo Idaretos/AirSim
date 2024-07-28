@@ -30,6 +30,11 @@ STRICT_MODE_OFF
 
 #include "vehicles/multirotor/api/MultirotorRpcLibAdaptors.hpp"
 
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <stdint.h>
+
 STRICT_MODE_ON
 
 namespace msr
@@ -42,6 +47,10 @@ namespace airlib
     MultirotorRpcLibServer::MultirotorRpcLibServer(ApiProvider* api_provider, string server_address, uint16_t port)
         : RpcLibServerBase(api_provider, server_address, port)
     {
+        // get system time in microseconds
+        unsigned int begintime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+
         (static_cast<rpc::server*>(getServer()))->bind("takeoff", [&](float timeout_sec, const std::string& vehicle_name) -> bool {
             return getVehicleApi(vehicle_name)->takeoff(timeout_sec);
         });
@@ -140,6 +149,12 @@ namespace airlib
         (static_cast<rpc::server*>(getServer()))->bind("getMultirotorState", [&](const std::string& vehicle_name) -> MultirotorRpcLibAdaptors::MultirotorState {
             return MultirotorRpcLibAdaptors::MultirotorState(getVehicleApi(vehicle_name)->getMultirotorState());
         });
+        unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        unsigned int duration = endtime - begintime;
+        std::ofstream LogFile("/home/rubis/Control_AirSim/log/AirSimAPI.txt", std::ios::app);
+        LogFile << sched_getcpu() << "," << begintime << "," << endtime << "," << duration << ",MultirotorRpcLibServer" << std::endl;
+        LogFile.close();
     }
 
     //required for pimpl

@@ -166,7 +166,18 @@ __pragma(warning(disable : 4239))
         MultirotorRpcLibClient* MultirotorRpcLibClient::moveToPositionAsync(float x, float y, float z, float velocity, float timeout_sec,
                                                                             DrivetrainType drivetrain, const YawMode& yaw_mode, float lookahead, float adaptive_lookahead, const std::string& vehicle_name)
         {
+            // begin time in microseconds
+            unsigned int begintime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count());
+
             pimpl_->last_future = static_cast<rpc::client*>(getClient())->async_call("moveToPosition", x, y, z, velocity, timeout_sec, drivetrain, MultirotorRpcLibAdaptors::YawMode(yaw_mode), lookahead, adaptive_lookahead, vehicle_name);
+            
+            unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count());
+            unsigned int elapsedtime = endtime - begintime;
+            std::ofstream myfile("/home/rubis/Control_AirSim/log/AirSimAPI.txt", std::ios::app);
+            myfile << std::this_thread::get_id() << "," << begintime << "," << endtime << "," << elapsedtime << ",moveToPositionAsync" << std::endl;
+            myfile.close();
             return this;
         }
 

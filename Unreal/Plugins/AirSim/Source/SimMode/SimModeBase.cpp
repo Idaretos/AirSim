@@ -74,6 +74,7 @@ ASimModeBase::ASimModeBase()
 
 void ASimModeBase::toggleLoadingScreen(bool is_visible)
 {
+    SCOPED_NAMED_EVENT(ASimModeBase_toggleLoadingScreen, FColor::Green);
     if (loading_screen_widget_ == nullptr)
         return;
     else {
@@ -398,6 +399,7 @@ void ASimModeBase::advanceTimeOfDay()
 
 void ASimModeBase::setSunRotation(FRotator rotation)
 {
+    SCOPED_NAMED_EVENT(ASimModeBase_setSunRotation, FColor::Green);
     if (sun_ && sky_sphere_) {
         UAirBlueprintLib::RunCommandOnGameThread([this, rotation]() {
             sun_->SetActorRotation(rotation);
@@ -411,6 +413,7 @@ void ASimModeBase::setSunRotation(FRotator rotation)
 
 void ASimModeBase::reset()
 {
+    SCOPED_NAMED_EVENT(ASimModeBase_reset, FColor::Green);
     //default implementation
     UAirBlueprintLib::RunCommandOnGameThread([this]() {
         for (auto& api : getApiProvider()->getVehicleSimApis()) {
