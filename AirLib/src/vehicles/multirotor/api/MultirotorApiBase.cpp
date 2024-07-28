@@ -12,6 +12,7 @@
 #include <fstream>
 #include <chrono>
 #include <time.h>
+#include <sched.h>
 
 
 namespace msr
@@ -473,10 +474,22 @@ namespace airlib
     bool MultirotorApiBase::moveToPosition(float x, float y, float z, float velocity, float timeout_sec, DrivetrainType drivetrain,
                                            const YawMode& yaw_mode, float lookahead, float adaptive_lookahead)
     {
+        // begin time in microseconds
+        unsigned int begintime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+
         SingleTaskCall lock(this);
 
         vector<Vector3r> path{ Vector3r(x, y, z) };
-        return moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+        bool RetVal = moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+
+        unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        unsigned int elapsedtime = endtime - begintime;
+        std::ofstream myfile("/home/rubis/Control_AirSim/log/AirSimAPIonly.txt", std::ios::app);
+        myfile << sched_getcpu() << "," << begintime << "," << endtime << "," << elapsedtime << ",moveToPosition" << std::endl;
+        myfile.close();
+        return RetVal;
     }
 
     bool MultirotorApiBase::moveToZ(float z, float velocity, float timeout_sec, const YawMode& yaw_mode,
@@ -638,8 +651,19 @@ namespace airlib
 
     void MultirotorApiBase::moveToPositionInternal(const Vector3r& dest, const YawMode& yaw_mode)
     {
+        // begin time in microseconds
+        unsigned int begintime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+
         if (safetyCheckDestination(dest))
             commandPosition(dest.x(), dest.y(), dest.z(), yaw_mode);
+
+        unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        unsigned int elapsedtime = endtime - begintime;
+        std::ofstream myfile("/home/rubis/Control_AirSim/log/AirSimAPI.txt", std::ios::app);
+        myfile << std::this_thread::get_id() << "," << begintime << "," << endtime << "," << elapsedtime << ",moveToPositionInternal" << std::endl;
+        myfile.close();
     }
 
     void MultirotorApiBase::moveByRollPitchYawZInternal(float roll, float pitch, float yaw, float z)
