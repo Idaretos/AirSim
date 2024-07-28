@@ -12,6 +12,7 @@
 #include <fstream>
 #include <chrono>
 #include <time.h>
+#include <unistd.h>
 
 
 namespace msr
@@ -476,7 +477,22 @@ namespace airlib
         SingleTaskCall lock(this);
 
         vector<Vector3r> path{ Vector3r(x, y, z) };
-        return moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+
+        auto begin = std::chrono::system_clock::now();
+
+        bool RetVal = moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+        // bool RetVal = true;
+
+        // null loop for 20milliseconds
+        // while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - begin).count() < 20) {}
+        auto end = std::chrono::system_clock::now();
+        std::FILE* wheredelay = std::fopen("/home/rubis/Control_AirSim/log/moveToPosition.csv", "a");
+        // print core, thread, begin, end, duration, method_name
+        // time unit: milliseconds
+        std::fprintf(wheredelay, "%d, %d, %lld, %lld, %lld, moveToPosition\n", sched_getcpu(), std::this_thread::get_id(), std::chrono::duration_cast<std::chrono::milliseconds>(begin.time_since_epoch()).count(), std::chrono::duration_cast<std::chrono::milliseconds>(end.time_since_epoch()).count(), std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+        // usleep(10);
+
+        return RetVal;
     }
 
     bool MultirotorApiBase::moveToZ(float z, float velocity, float timeout_sec, const YawMode& yaw_mode,
