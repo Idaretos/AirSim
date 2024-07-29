@@ -17,7 +17,6 @@
 #include <string>
 #include <cstdio>
 
-
 namespace msr
 {
 namespace airlib
@@ -505,15 +504,15 @@ namespace airlib
 
         SingleTaskCall lock(this);
 
-        // vector<Vector3r> path{ Vector3r(x, y, z) };
-        // bool RetVal = moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
+        vector<Vector3r> path{ Vector3r(x, y, z) };
+        bool RetVal = moveOnPath(path, velocity, timeout_sec, drivetrain, yaw_mode, lookahead, adaptive_lookahead);
 
-        unsigned int whileend = begintime + 2000000;
-        while (whileend > static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count())) {
-            // do nothing
-        }
-        bool RetVal = true;
+        // unsigned int whileend = begintime + 2000000;
+        // while (whileend > static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
+        //     std::chrono::system_clock::now().time_since_epoch()).count())) {
+        //     // do nothing
+        // }
+        // bool RetVal = true;
 
         unsigned int endtime = static_cast<unsigned int>(std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count());
