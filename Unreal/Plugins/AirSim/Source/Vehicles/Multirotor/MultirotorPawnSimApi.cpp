@@ -4,6 +4,9 @@
 #include "UnrealSensors/UnrealSensorFactory.h"
 #include <exception>
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 using namespace msr::airlib;
 
 MultirotorPawnSimApi::MultirotorPawnSimApi(const Params& params)
@@ -88,6 +91,7 @@ void MultirotorPawnSimApi::updateRenderedState(float dt)
 
 void MultirotorPawnSimApi::updateRendering(float dt)
 {
+    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_updateRendering, FColor::Green);
     //if we did reset then don't worry about synchronizing states for this tick
     if (reset_pending_) {
         // Continue to wait for reset
