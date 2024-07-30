@@ -4,9 +4,6 @@
 #include "UnrealSensors/UnrealSensorFactory.h"
 #include <exception>
 
-#include "CoreMinimal.h"
-#include "Misc/AssertionMacros.h"
-
 using namespace msr::airlib;
 
 MultirotorPawnSimApi::MultirotorPawnSimApi(const Params& params)
@@ -91,7 +88,6 @@ void MultirotorPawnSimApi::updateRenderedState(float dt)
 
 void MultirotorPawnSimApi::updateRendering(float dt)
 {
-    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_updateRendering, FColor::Green);
     //if we did reset then don't worry about synchronizing states for this tick
     if (reset_pending_) {
         // Continue to wait for reset
@@ -115,13 +111,13 @@ void MultirotorPawnSimApi::updateRendering(float dt)
     }
 
     //UAirBlueprintLib::LogMessage(TEXT("Collision (raw) Count:"), FString::FromInt(collision_response.collision_count_raw), LogDebugLevel::Unimportant);
-    UAirBlueprintLib::LogMessage(TEXT("Collision Count:"),
-                                 FString::FromInt(collision_response.collision_count_non_resting),
-                                 LogDebugLevel::Informational);
+    // UAirBlueprintLib::LogMessage(TEXT("Collision Count:"),
+    //                              FString::FromInt(collision_response.collision_count_non_resting),
+    //                              LogDebugLevel::Informational);
 
-    for (auto i = 0; i < vehicle_api_messages_.size(); ++i) {
-        UAirBlueprintLib::LogMessage(FString(vehicle_api_messages_[i].c_str()), TEXT(""), LogDebugLevel::Success, 30);
-    }
+    // for (auto i = 0; i < vehicle_api_messages_.size(); ++i) {
+    //     UAirBlueprintLib::LogMessage(FString(vehicle_api_messages_[i].c_str()), TEXT(""), LogDebugLevel::Success, 30);
+    // }
 
     try {
         vehicle_api_->sendTelemetry(dt);
