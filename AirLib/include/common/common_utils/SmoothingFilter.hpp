@@ -54,6 +54,7 @@ SmoothingFilter<T>::SmoothingFilter()
 template <typename T>
 SmoothingFilter<T>::SmoothingFilter(int window_size, float outlier_factor)
 {
+    unused(outlier_factor);
     initialize(window_size, std::numeric_limits<float>::infinity());
 }
 

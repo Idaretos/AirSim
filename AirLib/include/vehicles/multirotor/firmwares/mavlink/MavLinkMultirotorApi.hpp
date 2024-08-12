@@ -602,6 +602,7 @@ namespace airlib
 
         virtual void sendTelemetry(float last_interval = -1) override
         {
+            unused(last_interval);
             if (connection_ == nullptr || mav_vehicle_ == nullptr) {
                 return;
             }

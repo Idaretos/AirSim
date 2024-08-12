@@ -172,6 +172,7 @@ namespace airlib
 
         void rotorPowerMessageHandler(std::shared_ptr<mavlinkcom::AdHocConnection> connection, const std::vector<uint8_t>& msg)
         {
+            unused(connection);
             if (msg.size() != sizeof(RotorControlMessage)) {
                 Utils::log("Got rotor control message of size " + std::to_string(msg.size()) + " when we were expecting size " + std::to_string(sizeof(RotorControlMessage)), Utils::kLogLevelError);
                 return;
