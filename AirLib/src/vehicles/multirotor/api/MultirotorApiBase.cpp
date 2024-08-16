@@ -489,7 +489,8 @@ namespace airlib
         std::FILE* wheredelay = std::fopen("/home/rubis/Control_AirSim/log/moveToPosition.csv", "a");
         // print core, thread, begin, end, duration, method_name
         // time unit: milliseconds
-        std::fprintf(wheredelay, "%d, %d, %lld, %lld, %lld, moveToPosition\n", sched_getcpu(), std::this_thread::get_id(), std::chrono::duration_cast<std::chrono::milliseconds>(begin.time_since_epoch()).count(), std::chrono::duration_cast<std::chrono::milliseconds>(end.time_since_epoch()).count(), std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+        pid_t tid = syscall(186);
+        std::fprintf(wheredelay, "%d, %d, %lld, %lld, %lld, moveToPosition\n", sched_getcpu(), tid, std::chrono::duration_cast<std::chrono::milliseconds>(begin.time_since_epoch()).count(), std::chrono::duration_cast<std::chrono::milliseconds>(end.time_since_epoch()).count(), std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
         // usleep(10);
 
         return RetVal;
@@ -872,6 +873,16 @@ namespace airlib
         return emergencyManeuverIfUnsafe(result);
     }
 
+    /**
+     * Sets the next path position based on the given path, path segments, current path location, next distance, and next path location.
+     * 
+     * @param path The vector of Vector3r representing the path.
+     * @param path_segs The vector of PathSegment representing the path segments.
+     * @param cur_path_loc The current path location.
+     * @param next_dist The next distance.
+     * @param next_path_loc The next path location to be set.
+     * @return The remaining distance after setting the next path position.
+     */
     float MultirotorApiBase::setNextPathPosition(const vector<Vector3r>& path, const vector<PathSegment>& path_segs,
                                                  const PathPosition& cur_path_loc, float next_dist, PathPosition& next_path_loc)
     {
