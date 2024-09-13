@@ -3,6 +3,8 @@
 #include "vehicles/multirotor/MultiRotorParamsFactory.hpp"
 #include "UnrealSensors/UnrealSensorFactory.h"
 #include <exception>
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
 
 using namespace msr::airlib;
 
@@ -162,6 +164,7 @@ void MultirotorPawnSimApi::resetImplementation()
 //this is high frequency physics tick, flier gets ticked at rendering frame rate
 void MultirotorPawnSimApi::update()
 {
+    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_update, FColor::Green);
     //environment update for current position
     PawnSimApi::update();
 

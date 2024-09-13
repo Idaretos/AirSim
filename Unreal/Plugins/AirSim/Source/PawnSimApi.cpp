@@ -14,6 +14,9 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "DrawDebugHelpers.h"
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 PawnSimApi::PawnSimApi(const Params& params)
     : params_(params), ned_transform_(params.pawn, *params.global_transform)
 {
@@ -444,6 +447,7 @@ void PawnSimApi::setPose(const Pose& pose, bool ignore_collision)
 
 void PawnSimApi::setPoseInternal(const Pose& pose, bool ignore_collision)
 {
+    SCOPED_NAMED_EVENT(PawnSimApi_setPoseInternal, FColor::Green); // to be removed
     //translate to new PawnSimApi position & orientation from NED to NEU
     FVector position = ned_transform_.fromLocalNed(pose.position);
     state_.current_position = position;

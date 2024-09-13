@@ -13,6 +13,7 @@
 #include "common/CommonStructs.hpp"
 #include "common/SteppableClock.hpp"
 #include <cinttypes>
+#include <thread>
 
 namespace msr
 {
@@ -43,10 +44,36 @@ namespace airlib
             initPhysicsBody(body_ptr);
         }
 
+        void process_chunk(int start, int end, int thread_id) 
+        {
+            for (int i = start; i < end; i++) {
+                PhysicsBody* body_ptr = this->at(i);
+                updatePhysics(*body_ptr);
+            }
+        }
+
         virtual void update() override
         {
             PhysicsEngineBase::update();
+            
+            // int length = this->size();
+            // int num_threads = 5;
+            // std::thread threads[num_threads];
+            // int chunk_size = length / num_threads;
+            // for (int i = 0; i < num_threads; i++) {
+            //     int start = i * chunk_size;
+            //     int end = (i + 1) * chunk_size;
+            //     if (i == num_threads - 1) {
+            //         end = length;
+            //     }
+            //     threads[i] = std::thread(&FastPhysicsEngine::process_chunk, this, start, end, i);
+            // }
 
+            // for (int i = 0; i < num_threads; i++) {
+            //     threads[i].join();
+            // }
+
+            
             for (PhysicsBody* body_ptr : *this) {
                 updatePhysics(*body_ptr);
             }

@@ -27,6 +27,9 @@
 #include "AssetRegistryModule.h"
 #include "DetectionComponent.h"
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 /*
 //TODO: change naming conventions to same as other files?
 Naming conventions in this file:
@@ -630,6 +633,7 @@ bool UAirBlueprintLib::HasObstacle(const AActor* actor, const FVector& start, co
 bool UAirBlueprintLib::GetObstacle(const AActor* actor, const FVector& start, const FVector& end,
                                    FHitResult& hit, const AActor* ignore_actor, ECollisionChannel collision_channel)
 {
+    SCOPED_NAMED_EVENT(UAirBlueprintLib_GetObstacle, FColor::Red);
     hit = FHitResult(ForceInit);
 
     FCollisionQueryParams trace_params;
