@@ -30,6 +30,16 @@ namespace airlib
             initialize(kinematics, environment);
         }
 
+        MultiRotorPhysicsBody(MultiRotorParams* params, VehicleApiBase* vehicle_api,
+                              Kinematics* kinematics, Environment* environment, std::string vehicle_name)
+            : params_(params), vehicle_api_(vehicle_api)
+        {
+            setName("MultiRotorPhysicsBody");
+            vehicle_api_->setParent(this);
+            this->vehicle_name = vehicle_name;
+            initialize(kinematics, environment);
+        }
+
         //*** Start: UpdatableState implementation ***//
         virtual void resetImplementation() override
         {

@@ -72,6 +72,7 @@ public: //types
 
 public: //implementation of VehicleSimApiBase
     virtual void initialize() override;
+    virtual void initialize(std::string vehicle_name);
 
     virtual void resetImplementation() override;
     virtual void update() override;

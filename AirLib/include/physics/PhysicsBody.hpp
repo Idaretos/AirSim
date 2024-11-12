@@ -12,6 +12,7 @@
 #include "Environment.hpp"
 #include <unordered_set>
 #include <exception>
+#include <mutex>
 
 namespace msr
 {
@@ -245,6 +246,7 @@ namespace airlib
         }
 
     public:
+        std::string vehicle_name;
         //for use in physics engine: //TODO: use getter/setter or friend method?
         TTimePoint last_kinematics_time;
 

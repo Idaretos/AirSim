@@ -29,6 +29,23 @@ void CarPawnSimApi::initialize()
     joystick_controls_ = msr::airlib::CarApiBase::CarControls();
 }
 
+void CarPawnSimApi::initialize(std::string vehicle_name="")
+{
+    PawnSimApi::initialize();
+
+    //create vehicle params
+    std::shared_ptr<UnrealSensorFactory> sensor_factory = std::make_shared<UnrealSensorFactory>(getPawn(), &getNedTransform());
+
+    vehicle_api_ = CarApiFactory::createApi(getVehicleSetting(),
+                                            sensor_factory,
+                                            *getGroundTruthKinematics(),
+                                            *getGroundTruthEnvironment());
+    pawn_api_ = std::unique_ptr<CarPawnApi>(new CarPawnApi(static_cast<ACarPawn*>(getPawn()), getGroundTruthKinematics(), vehicle_api_.get()));
+
+    //TODO: should do reset() here?
+    joystick_controls_ = msr::airlib::CarApiBase::CarControls();
+}
+
 std::string CarPawnSimApi::getRecordFileLine(bool is_header_line) const
 {
     std::string common_line = PawnSimApi::getRecordFileLine(is_header_line);

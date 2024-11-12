@@ -644,7 +644,7 @@ std::unique_ptr<PawnSimApi> ASimModeBase::createVehicleApi(APawn* vehicle_pawn)
 
     PawnSimApi::Params pawn_sim_api_params(vehicle_pawn, &getGlobalNedTransform(), getVehiclePawnEvents(vehicle_pawn), getVehiclePawnCameras(vehicle_pawn), pip_camera_class, collision_display_template, home_geopoint, vehicle_name);
 
-    std::unique_ptr<PawnSimApi> vehicle_sim_api = createVehicleSimApi(pawn_sim_api_params);
+    std::unique_ptr<PawnSimApi> vehicle_sim_api = createVehicleSimApi(pawn_sim_api_params, vehicle_name);
     auto vehicle_sim_api_p = vehicle_sim_api.get();
     auto vehicle_api = getVehicleApi(pawn_sim_api_params, vehicle_sim_api_p);
     getApiProvider()->insert_or_assign(vehicle_name, vehicle_api, vehicle_sim_api_p);
@@ -788,12 +788,19 @@ void ASimModeBase::initializeVehiclePawn(APawn* pawn)
     unused(pawn);
     //derived class should override this method to retrieve types of pawns they support
 }
-std::unique_ptr<PawnSimApi> ASimModeBase::createVehicleSimApi(
-    const PawnSimApi::Params& pawn_sim_api_params) const
+std::unique_ptr<PawnSimApi> ASimModeBase::createVehicleSimApi( const PawnSimApi::Params& pawn_sim_api_params ) const
 {
     unused(pawn_sim_api_params);
     auto sim_api = std::unique_ptr<PawnSimApi>();
     sim_api->initialize();
+
+    return sim_api;
+}
+std::unique_ptr<PawnSimApi> ASimModeBase::createVehicleSimApi( const PawnSimApi::Params& pawn_sim_api_params, std::string vehicle_name) const
+{
+    unused(pawn_sim_api_params);
+    auto sim_api = std::unique_ptr<PawnSimApi>();
+    sim_api->initialize(vehicle_name);
 
     return sim_api;
 }
