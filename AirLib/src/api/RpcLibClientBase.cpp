@@ -131,7 +131,7 @@ __pragma(warning(disable : 4239))
             const TTimeDelta pause_time = 1;
             while (getConnectionState() != RpcLibClientBase::ConnectionState::Connected) {
                 std::cout << "X" << std::flush;
-                clock->sleep_for(pause_time);
+                // clock->sleep_for(pause_time);
             }
             std::cout << std::endl
                       << "Connected!" << std::endl;

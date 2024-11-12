@@ -12,6 +12,11 @@
 #include <memory>
 #include "common/CommonStructs.hpp"
 #include "common/SteppableClock.hpp"
+
+#include "common/common_utils/StrictMode.hpp"
+#include "vehicles/multirotor/api/MultirotorRpcLibClient.hpp"
+#include "common/common_utils/FileSystem.hpp"
+
 #include <cinttypes>
 
 namespace msr
@@ -26,6 +31,16 @@ namespace airlib
             : enable_ground_lock_(enable_ground_lock), wind_(wind)
         {
             setName("FastPhysicsEngine");
+
+            std::FILE* file = std::fopen("/home/idaretos/Control_AirSim/log/connectionLog.txt", "w");
+            std::fclose(file);
+
+            std::string ip_addr = "147.46.125.127";
+            uint16_t port = 41451;
+            float timeout_sec = 60;
+            client = new MultirotorRpcLibClient(ip_addr, port, timeout_sec);
+            client->confirmConnection();
+            client->reset();
         }
 
         //*** Start: UpdatableState implementation ***//
@@ -74,6 +89,11 @@ namespace airlib
         void initPhysicsBody(PhysicsBody* body_ptr)
         {
             body_ptr->last_kinematics_time = clock()->nowNanos();
+            client->enableApiControl(true, body_ptr->vehicle_name);
+            client->armDisarm(true, body_ptr->vehicle_name);
+            client->takeoffAsync(5, body_ptr->vehicle_name);
+            last_client_update_time_[body_ptr->vehicle_name] = clock()->nowNanos();
+            client_state_[body_ptr->vehicle_name] = 0;
         }
 
         void updatePhysics(PhysicsBody& body)
@@ -112,6 +132,25 @@ namespace airlib
             //with below commented out - Arducopter GPS may not work.
             //body.getEnvironment().setPosition(next.pose.position);
             //body.getEnvironment().update();
+            // if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > 2E9) {
+            //     if (client_state_[body.vehicle_name] == 0) {
+            //         client->moveToPositionAsync(0, 0, -7, 3, 3.4028235E38F, msr::airlib::DrivetrainType::MaxDegreeOfFreedom,msr::airlib::YawMode(),-1.0F, 1.0F, body.vehicle_name);
+            //         client_state_[body.vehicle_name] = 1;
+            //     } else if (client_state_[body.vehicle_name] == 1) {
+            //         client->moveToPositionAsync(0, 1, -11, 3, 3.4028235E38F, msr::airlib::DrivetrainType::MaxDegreeOfFreedom,msr::airlib::YawMode(),-1.0F, 1.0F, body.vehicle_name);
+            //         client_state_[body.vehicle_name] = 2;
+            //     } else if (client_state_[body.vehicle_name] == 2) {
+            //         client->moveToPositionAsync(0, 0, -15, 3, 3.4028235E38F, msr::airlib::DrivetrainType::MaxDegreeOfFreedom,msr::airlib::YawMode(),-1.0F, 1.0F, body.vehicle_name);
+            //         client_state_[body.vehicle_name] = 3;
+            //     } else if (client_state_[body.vehicle_name] == 3) {
+            //         client->moveToPositionAsync(0, -1, -11, 3, 3.4028235E38F, msr::airlib::DrivetrainType::MaxDegreeOfFreedom,msr::airlib::YawMode(),-1.0F, 1.0F, body.vehicle_name);
+            //         client_state_[body.vehicle_name] = 0;
+            //     } else {
+            //         client_state_[body.vehicle_name] = 0;
+            //     }
+            //     std::cout << body.vehicle_name << " moving to position" << std::endl;
+            //     last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
+            // }
         }
 
         static void updateCollisionResponseInfo(const CollisionInfo& collision_info, const Kinematics::State& next,
@@ -322,7 +361,7 @@ namespace airlib
             return wrench;
         }
 
-        static void getNextKinematicsNoCollision(TTimeDelta dt, PhysicsBody& body, const Kinematics::State& current,
+        void getNextKinematicsNoCollision(TTimeDelta dt, PhysicsBody& body, const Kinematics::State& current,
                                                  Kinematics::State& next, Wrench& next_wrench, const Vector3r& wind)
         {
             const real_T dt_real = static_cast<real_T>(dt);
@@ -402,11 +441,18 @@ namespace airlib
                     next.accelerations.angular = Vector3r::Zero();
                 }
             }
+            // every 0.5 seconds, log the physics state
+            if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > 5E8) {
+                last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
+                // std::FILE* logFile = std::fopen("/home/idaretos/Control_AirSim/log/connectionLog.txt", "a");
+                // msr::airlib::TTimePoint current_tp = clock()->nowNanos() / 1000;
+                // std::fprintf(logFile, "moveByVelocityAsync, %s, %lu\n", body.vehicle_name.c_str(), current_tp);
+                // std::fclose(logFile);
+                client->moveByVelocityAsync(next.twist.linear.x(), next.twist.linear.y(), next.twist.linear.z(), 0.5, msr::airlib::DrivetrainType::MaxDegreeOfFreedom, msr::airlib::YawMode(), body.vehicle_name);
+            }
 
             computeNextPose(dt, current.pose, avg_linear, avg_angular, next);
 
-            //Utils::log(Utils::stringf("N-VEL %s %f: ", VectorMath::toString(next.twist.linear).c_str(), dt));
-            //Utils::log(Utils::stringf("N-POS %s %f: ", VectorMath::toString(next.pose.position).c_str(), dt));
         }
 
         static void computeNextPose(TTimeDelta dt, const Pose& current_pose, const Vector3r& avg_linear, const Vector3r& avg_angular, Kinematics::State& next)
@@ -459,6 +505,11 @@ namespace airlib
         bool enable_ground_lock_;
         TTimePoint last_message_time;
         Vector3r wind_;
+
+        // MultirotorRpcLibClient* client;
+        MultirotorRpcLibClient* client;
+        std::unordered_map<std::string, TTimePoint> last_client_update_time_;
+        std::unordered_map<std::string, int> client_state_;
     };
 }
 } //namespace
