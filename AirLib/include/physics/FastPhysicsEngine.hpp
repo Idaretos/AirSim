@@ -19,11 +19,20 @@
 
 #include <cinttypes>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <regex>
+#define LISTEN_PORT 41543   // Port to receive the forwarded message from
+#define BUFFER_SIZE 8192    // Buffer size for message
+// #define UPDATE_PERIOD 1.7E9   // Update period for the client
+
 namespace msr
 {
 namespace airlib
 {
-
     class FastPhysicsEngine : public PhysicsEngineBase
     {
     public:
@@ -32,15 +41,49 @@ namespace airlib
         {
             setName("FastPhysicsEngine");
 
-            std::FILE* file = std::fopen("/home/idaretos/Control_AirSim/log/connectionLog.txt", "w");
-            std::fclose(file);
+            // std::FILE* file = std::fopen("/home/idaretos/Control_AirSim/log/connectionLog.txt", "w");
+            // std::fclose(file);
+            // file = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "w");
+            // std::fclose(file);
 
             std::string ip_addr = "147.46.125.127";
             uint16_t port = 41451;
             float timeout_sec = 60;
-            client = new MultirotorRpcLibClient(ip_addr, port, timeout_sec);
-            client->confirmConnection();
-            client->reset();
+            // client = new MultirotorRpcLibClient(ip_addr, port, timeout_sec);
+            // client->confirmConnection();
+            // client->reset();
+
+            // read UPDATE_PERIOD from customsettings.txt
+            std::ifstream file("/home/idaretos/Control_AirSim/customsettings.txt");
+            std::string line;
+            std::string key = "UPDATE_PERIOD";
+            std::string value;
+            while (std::getline(file, line)) {
+                if (line.find(key) != std::string::npos) {
+                    std::istringstream iss(line);
+                    iss >> key >> value;
+                    break;
+                }
+            }
+            file.close();
+            UPDATE_PERIOD = std::stoul(value);
+            // convert milliseconds to nanoseconds
+            UPDATE_PERIOD *= 1E6;
+            
+            std::FILE* logfile = std::fopen("/home/idaretos/Control_AirSim/log/updatePeriod.txt", "w");
+            std::fprintf(logfile, "Update period: %lu\n", UPDATE_PERIOD);
+            std::fclose(logfile);
+            logfile = std::fopen("/home/idaretos/Control_AirSim/log/physics.txt", "w");
+            std::fclose(logfile);
+        }
+
+        virtual ~FastPhysicsEngine()
+        {
+            // delete client;
+            // clear thread
+            msg_receiver.~thread();
+            close(client_sock);
+            close(listen_sock);
         }
 
         //*** Start: UpdatableState implementation ***//
@@ -49,6 +92,12 @@ namespace airlib
             for (PhysicsBody* body_ptr : *this) {
                 initPhysicsBody(body_ptr);
             }
+
+            // create a thread for receiving the message from the controller
+            // std::thread t1(&FastPhysicsEngine::receiveMessage, this);
+            // t1.detach();
+            msg_receiver = std::thread(&FastPhysicsEngine::receiveMessage, this);
+            msg_receiver.detach();
         }
 
         virtual void insert(PhysicsBody* body_ptr) override
@@ -89,20 +138,81 @@ namespace airlib
         void initPhysicsBody(PhysicsBody* body_ptr)
         {
             body_ptr->last_kinematics_time = clock()->nowNanos();
-            client->enableApiControl(true, body_ptr->vehicle_name);
-            client->armDisarm(true, body_ptr->vehicle_name);
-            client->takeoffAsync(5, body_ptr->vehicle_name);
+            // client->enableApiControl(true, body_ptr->vehicle_name);
+            // client->armDisarm(true, body_ptr->vehicle_name);
+            // // client->takeoffAsync(5, body_ptr->vehicle_name);
             last_client_update_time_[body_ptr->vehicle_name] = clock()->nowNanos();
-            client_state_[body_ptr->vehicle_name] = 0;
+            // client_state_[body_ptr->vehicle_name] = 0;
         }
 
         void updatePhysics(PhysicsBody& body)
         {
+
             TTimeDelta dt = clock()->updateSince(body.last_kinematics_time);
 
             body.lock();
             //get current kinematics state of the body - this state existed since last dt seconds
             const Kinematics::State& current = body.getKinematics();
+            
+            if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > UPDATE_PERIOD) {
+                if (mtx.try_lock()) {
+                // swap real_pos_ptr and tmp_pos_ptr
+                    // if (pos1) {
+                    //    pos1 = false;
+                    // } else {
+                    //    pos1 = true;
+                    // }
+
+                    std::FILE* trylockfile = std::fopen("/home/idaretos/Control_AirSim/log/trylock.txt", "a");
+                    std::fprintf(trylockfile, "Try lock\n");
+                    std::fclose(trylockfile);
+                    mtx.unlock();
+                }
+                // find the vehicle's position in the real_pos_ptr
+                std::string vehicle_name = body.vehicle_name;
+                
+                Eigen::Vector3f vehicle_pos = Eigen::Vector3f::Zero();
+                Vector3r vehicle_vel = Vector3r::Zero();
+
+                mtx.lock();
+                // check if table length is 0
+                if (pos1) {
+                    // std::cout << "Table size: " << real_pos1.size() << std::endl;
+                    if (real_pos1.size() > 0) {
+                        auto it = real_pos1.find(vehicle_name);
+                        if (it != real_pos1.end()) {
+                            // printf("Vehicle: %s\n", vehicle_name.c_str());
+                            last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
+                            vehicle_pos = real_pos1.at(vehicle_name);
+                            vehicle_vel = real_vel.at(vehicle_name);
+                            real_pos1.erase(vehicle_name);
+                            real_vel.erase(vehicle_name);
+                        }
+                    }
+                } else {
+                    if (real_pos2.size() > 0) {
+                        auto it = real_pos2.find(vehicle_name);
+                        // if (real_pos_ptr->find(vehicle_name) != real_pos_ptr->end()) {
+                        if (it != real_pos2.end()) {
+                            last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
+                            vehicle_pos = real_pos2.at(vehicle_name);
+                            real_pos2.erase(vehicle_name);
+                        }
+
+                        // overwrite the vehicle's position
+                        // body.setPose(Pose(vehicle_pos, Quaternionr::Identity()));
+                    }
+                }
+                mtx.unlock();
+                const_cast<Kinematics::State&>(current).pose.position = vehicle_pos;
+                // const_cast<Kinematics::State&>(current).twist.linear = vehicle_vel;
+                body.kinematics_->last_updated_twist.linear = vehicle_vel;
+                // printf("Vehicle: %s, Velocity: %f %f %f\n", vehicle_name.c_str(), vehicle_vel.x(), vehicle_vel.y(), vehicle_vel.z());
+                body.setGrounded(false);
+            }
+
+            const_cast<Kinematics::State&>(current).twist.linear = body.kinematics_->last_updated_twist.linear;
+
             Kinematics::State next;
             Wrench next_wrench;
 
@@ -151,6 +261,7 @@ namespace airlib
             //     std::cout << body.vehicle_name << " moving to position" << std::endl;
             //     last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
             // }
+
         }
 
         static void updateCollisionResponseInfo(const CollisionInfo& collision_info, const Kinematics::State& next,
@@ -442,14 +553,15 @@ namespace airlib
                 }
             }
             // every 0.5 seconds, log the physics state
-            if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > 5E8) {
-                last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
-                // std::FILE* logFile = std::fopen("/home/idaretos/Control_AirSim/log/connectionLog.txt", "a");
-                // msr::airlib::TTimePoint current_tp = clock()->nowNanos() / 1000;
-                // std::fprintf(logFile, "moveByVelocityAsync, %s, %lu\n", body.vehicle_name.c_str(), current_tp);
-                // std::fclose(logFile);
-                client->moveByVelocityAsync(next.twist.linear.x(), next.twist.linear.y(), next.twist.linear.z(), 0.5, msr::airlib::DrivetrainType::MaxDegreeOfFreedom, msr::airlib::YawMode(), body.vehicle_name);
-            }
+            // if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > 1E8) {
+            //     client->moveByVelocityAsync(next.twist.linear.x(), next.twist.linear.y(), next.twist.linear.z(), 0.1, msr::airlib::DrivetrainType::MaxDegreeOfFreedom, msr::airlib::YawMode(), body.vehicle_name);
+            //     msr::airlib::TTimePoint current_tp = clock()->nowNanos();
+            //     uint64_t chrono_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            //     last_client_update_time_[body.vehicle_name] = current_tp;
+            //     std::FILE* logFile = std::fopen("/home/idaretos/Control_AirSim/log/connectionLog.txt", "a");
+            //     std::fprintf(logFile, "moveByVelocityAsync, %s, %lu\n", body.vehicle_name.c_str(), chrono_time);
+            //     std::fclose(logFile);
+            // }
 
             computeNextPose(dt, current.pose, avg_linear, avg_angular, next);
 
@@ -458,6 +570,7 @@ namespace airlib
         static void computeNextPose(TTimeDelta dt, const Pose& current_pose, const Vector3r& avg_linear, const Vector3r& avg_angular, Kinematics::State& next)
         {
             real_T dt_real = static_cast<real_T>(dt);
+            // printf("avg_linear: %f %f %f\n", avg_linear.x(), avg_linear.y(), avg_linear.z());
 
             next.pose.position = current_pose.position + avg_linear * dt_real;
 
@@ -495,6 +608,145 @@ namespace airlib
                 next.pose.orientation = current_pose.orientation;
         }
 
+        void receiveMessage() {
+            struct sockaddr_in listen_addr, client_addr;
+            int loop_threshold = 100000;
+            char buffer[BUFFER_SIZE];
+            socklen_t client_addr_len = sizeof(client_addr);
+            // Create a socket for receiving messages (TCP)
+            if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+                // std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                // std::fprintf(logFile, "Socket creation failed\n");
+                // std::fclose(logFile);
+                perror("Socket creation failed");
+                // exit(EXIT_FAILURE);
+            }
+            // Set up the listening address
+            memset(&listen_addr, 0, sizeof(listen_addr));
+            listen_addr.sin_family = AF_INET; // IPv4
+            listen_addr.sin_addr.s_addr = INADDR_ANY; // Any incoming IP
+            listen_addr.sin_port = htons(LISTEN_PORT); // Listening port
+            // Bind the socket to the listening address
+            if (bind(listen_sock, (const struct sockaddr *)&listen_addr, sizeof(listen_addr)) < 0) {
+                // std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                // std::fprintf(logFile, "Bind failed\n");
+                // std::fclose(logFile);
+                perror("Bind failed");
+                close(listen_sock);
+                // exit(EXIT_FAILURE);
+            }
+            // Start listening for incoming connections
+            if (listen(listen_sock, 5) < 0) {
+                // std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                // std::fprintf(logFile, "Listen failed\n");
+                // std::fclose(logFile);
+                perror("Listen failed");
+                close(listen_sock);
+                // exit(EXIT_FAILURE);
+            }
+            printf("Listening on port %d for TCP connections...\n", LISTEN_PORT);
+            // std::FILE *lf = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+            // std::fprintf(lf, "Listening on port %d for TCP connections...\n", LISTEN_PORT);
+            // std::fclose(lf);
+            // Accept an incoming connection
+            client_sock = accept(listen_sock, (struct sockaddr *)&client_addr, &client_addr_len);
+            if (client_sock < 0) {
+                std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                perror("Connection accept failed");
+                // continue;
+            }
+
+            std::string incomplete_message = "";
+
+            while (1) {
+                // Receive the message
+                ssize_t len = recv(client_sock, buffer, BUFFER_SIZE, 0);
+                // printf("Received message, len: %zd\n", len);
+                if (len < 0) {
+                    // std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                    perror("Receive failed");
+                    close(client_sock);
+                    if (loop_threshold-- < 0) {
+                        break;
+                    }
+                    continue;
+                }
+                buffer[len] = '\0'; // Null-terminate the received data
+                // printf("Received message: %s\n", buffer);
+                // printf("message received\n");
+                // break down the message using ";" as delimiter
+                // std::FILE *lfile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                // std::fprintf(lfile, "Received message: %s\n", buffer);
+                // std::fclose(lfile);
+                std::string message(buffer);
+                std::string delimiter = ";";
+                size_t pos = 0;
+                std::string token;
+                
+                mtx.lock();
+                while ((pos = message.find(delimiter)) != std::string::npos) {
+                    token = message.substr(0, pos);
+                    // check if the token is following the format.
+                    // use regex to check if the token is in the correct format
+                    std::regex format("([a-zA-Z0-9]+:[+-]?([0-9]*[.])?[0-9]+,[+-]?([0-9]*[.])?[0-9]+,[+-]?([0-9]*[.])?[0-9]+,[+-]?([0-9]*[.])?[0-9]+,[+-]?([0-9]*[.])?[0-9]+,[+-]?([0-9]*[.])?[0-9]+)");
+                    if (!std::regex_match(token, format)) {
+                        if (incomplete_message.length() > 0) {
+                            token = incomplete_message + token;
+                            incomplete_message = "";
+                            if (!std::regex_match(token, format)) {
+                                continue;
+                            }
+                        } else {
+                            incomplete_message = token;
+                            message.erase(0, pos + delimiter.length());
+                            continue;
+                        }
+                        // std::cout << "Invalid format: " << token << std::endl;
+                        // // std::cout << "Message: " << message << std::endl;
+                        // message.erase(0, pos + delimiter.length());
+                        // continue;
+                    }
+
+                    std::string backup_token = token;
+                    // the token will look like "vehicle_name:x,y,z"
+                    // Save them in the tmp_pos_ptr
+                    std::string vehicle_name = token.substr(0, token.find(":"));
+                    token.erase(0, token.find(":") + 1);
+                    std::string x = token.substr(0, token.find(","));
+                    token.erase(0, token.find(",") + 1);
+                    std::string y = token.substr(0, token.find(","));
+                    token.erase(0, token.find(",") + 1);
+                    std::string z = token;
+                    token.erase(0, token.find(",") + 1);
+                    std::string vx = token.substr(0, token.find(","));
+                    token.erase(0, token.find(",") + 1);
+                    std::string vy = token.substr(0, token.find(","));
+                    token.erase(0, token.find(",") + 1);
+                    
+                    Eigen::Vector3f position(std::stof(x), std::stof(y), std::stof(z));
+                    Vector3r velocity(std::stof(vx), std::stof(vy), std::stof(token));
+                    
+                    if (pos1) {
+                        // std::cout << "Inserting into real_pos1, " << vehicle_name << ", " << position << std::endl;
+                        real_pos1.insert({vehicle_name, position});
+                        real_vel.insert({vehicle_name, velocity});
+                    } else {
+                        // std::cout << "Inserting into real_pos2, " << vehicle_name << ", " << position << std::endl;
+                        real_pos2.insert({vehicle_name, position});
+                        real_vel.insert({vehicle_name, velocity});
+                    }
+                    message.erase(0, pos + delimiter.length());
+                }
+                mtx.unlock();
+                // std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
+                // std::fprintf(logFile, "Received message: %s\n", buffer);
+                // std::fclose(logFile);
+                // Close the connection
+            }
+            close(client_sock);
+            close(listen_sock);
+        }
+
     private:
         static constexpr uint kCollisionResponseCycles = 1;
         static constexpr float kAxisTolerance = 0.25f;
@@ -510,6 +762,39 @@ namespace airlib
         MultirotorRpcLibClient* client;
         std::unordered_map<std::string, TTimePoint> last_client_update_time_;
         std::unordered_map<std::string, int> client_state_;
+
+        std::mutex mtx;
+
+        // std::unordered_map<std::string, Vector3r> real_pos1;
+        // std::unordered_map<std::string, Vector3r> real_pos2;
+        std::unordered_map<std::string, Eigen::Vector3f> real_pos1;
+        std::unordered_map<std::string, Eigen::Vector3f> real_pos2;
+        std::unordered_map<std::string, Vector3r> real_vel;
+        bool pos1 = true;
+
+        unsigned long UPDATE_PERIOD = 1.3E9;
+
+        std::thread msg_receiver;
+
+        int client_sock;
+        int listen_sock;
+
+        class ScopeLogger {
+        public:
+            ScopeLogger(std::stringstream& debug_string) : debug_string_(debug_string) {
+                begin = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();                
+            }
+            ~ScopeLogger() {
+                uint64_t end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                std::FILE* logFile = std::fopen("/home/idaretos/Control_AirSim/log/physics.txt", "a");
+                std::fprintf(logFile, "%lu, %lu, %s\n", begin, end, debug_string_.str().c_str());
+                std::fclose(logFile);
+            }
+        private:
+            uint64_t begin;
+            std::stringstream& debug_string_;
+        };
+#define SCOPED_NAMED_EVENT(name) ScopeLogger scoped_logger_##__LINE__(debug_string_ << name)
     };
 }
 } //namespace

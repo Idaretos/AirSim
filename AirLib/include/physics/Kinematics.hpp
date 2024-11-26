@@ -101,6 +101,8 @@ namespace airlib
             return initial_;
         }
 
+        Twist last_updated_twist = Twist::zero();
+
     private: //fields
         State initial_;
         State current_;

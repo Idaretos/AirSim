@@ -249,12 +249,12 @@ namespace airlib
         std::string vehicle_name;
         //for use in physics engine: //TODO: use getter/setter or friend method?
         TTimePoint last_kinematics_time;
+        Kinematics* kinematics_ = nullptr;
 
     private:
         real_T mass_, mass_inv_;
         Matrix3x3r inertia_, inertia_inv_;
 
-        Kinematics* kinematics_ = nullptr;
         Environment* environment_ = nullptr;
 
         //force is in world frame but torque is not
