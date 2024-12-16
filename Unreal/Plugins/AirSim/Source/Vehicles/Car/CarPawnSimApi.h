@@ -23,6 +23,7 @@ public:
 
 public:
     virtual void initialize() override;
+    virtual void initialize(std::string vehicle_name) override;
     virtual ~CarPawnSimApi() = default;
 
     //VehicleSimApiBase interface

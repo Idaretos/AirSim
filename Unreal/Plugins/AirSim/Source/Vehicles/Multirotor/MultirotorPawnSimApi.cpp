@@ -3,14 +3,18 @@
 #include "vehicles/multirotor/MultiRotorParamsFactory.hpp"
 #include "UnrealSensors/UnrealSensorFactory.h"
 #include <exception>
-#include "CoreMinimal.h"
-#include "Misc/AssertionMacros.h"
 
 using namespace msr::airlib;
 
 MultirotorPawnSimApi::MultirotorPawnSimApi(const Params& params)
     : PawnSimApi(params), pawn_events_(static_cast<MultirotorPawnEvents*>(params.pawn_events))
 {
+}
+
+MultirotorPawnSimApi::MultirotorPawnSimApi(const Params& params, std::string vehicle_name)
+    : PawnSimApi(params), pawn_events_(static_cast<MultirotorPawnEvents*>(params.pawn_events))
+{
+    unused(vehicle_name);
 }
 
 void MultirotorPawnSimApi::initialize()
@@ -23,6 +27,36 @@ void MultirotorPawnSimApi::initialize()
     vehicle_api_ = vehicle_params_->createMultirotorApi();
     //setup physics vehicle
     multirotor_physics_body_ = std::unique_ptr<MultiRotor>(new MultiRotorPhysicsBody(vehicle_params_.get(), vehicle_api_.get(), getKinematics(), getEnvironment()));
+    rotor_count_ = multirotor_physics_body_->wrenchVertexCount();
+    rotor_actuator_info_.assign(rotor_count_, RotorActuatorInfo());
+
+    vehicle_api_->setSimulatedGroundTruth(getGroundTruthKinematics(), getGroundTruthEnvironment());
+
+    //initialize private vars
+    last_phys_pose_ = Pose::nanPose();
+    pending_pose_status_ = PendingPoseStatus::NonePending;
+    reset_pending_ = false;
+    did_reset_ = false;
+    rotor_states_.rotors.assign(rotor_count_, RotorParameters());
+
+    //reset roll & pitch of vehicle as multirotors required to be on plain surface at start
+    Pose pose = getPose();
+    float pitch, roll, yaw;
+    VectorMath::toEulerianAngle(pose.orientation, pitch, roll, yaw);
+    pose.orientation = VectorMath::toQuaternion(0, 0, yaw);
+    setPose(pose, false);
+}
+
+void MultirotorPawnSimApi::initialize(std::string vehicle_name="")
+{
+    PawnSimApi::initialize();
+
+    //create vehicle API
+    std::shared_ptr<UnrealSensorFactory> sensor_factory = std::make_shared<UnrealSensorFactory>(getPawn(), &getNedTransform());
+    vehicle_params_ = MultiRotorParamsFactory::createConfig(getVehicleSetting(), sensor_factory);
+    vehicle_api_ = vehicle_params_->createMultirotorApi();
+    //setup physics vehicle
+    multirotor_physics_body_ = std::unique_ptr<MultiRotor>(new MultiRotorPhysicsBody(vehicle_params_.get(), vehicle_api_.get(), getKinematics(), getEnvironment(), vehicle_name));
     rotor_count_ = multirotor_physics_body_->wrenchVertexCount();
     rotor_actuator_info_.assign(rotor_count_, RotorActuatorInfo());
 
@@ -164,7 +198,6 @@ void MultirotorPawnSimApi::resetImplementation()
 //this is high frequency physics tick, flier gets ticked at rendering frame rate
 void MultirotorPawnSimApi::update()
 {
-    SCOPED_NAMED_EVENT(MultirotorPawnSimApi_update, FColor::Green);
     //environment update for current position
     PawnSimApi::update();
 

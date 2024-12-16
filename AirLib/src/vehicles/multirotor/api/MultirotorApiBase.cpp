@@ -254,6 +254,30 @@ namespace airlib
                                duration)
             .isTimeout();
     }
+    bool MultirotorApiBase::moveByVelocity(float vx, float vy, float vz, float duration, DrivetrainType drivetrain, const YawMode& yaw_mode, const std::string vehicle_name)
+    {
+        SCOPED_LOGGER(vehicle_name);
+        std::FILE* logFile = std::fopen("/home/rubis/Control_AirSim/log/connectionLog.txt", "a");
+        // uint64_t current = clock()->nowNanos() / 1000;
+        uint64_t chrono_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        std::fprintf(logFile, "moveByVelocityAsync, %s, %lu, %d\n", vehicle_name.c_str(), chrono_time, moveByVelocityCount++);
+        std::fclose(logFile);
+        
+        SingleTaskCall lock(this);
+
+        if (duration <= 0)
+            return true;
+
+        YawMode adj_yaw_mode(yaw_mode.is_rate, yaw_mode.yaw_or_rate);
+        adjustYaw(vx, vy, drivetrain, adj_yaw_mode);
+
+        return waitForFunction([&]() {
+                   moveByVelocityInternal(vx, vy, vz, adj_yaw_mode);
+                   return false; //keep moving until timeout
+               },
+                               duration)
+            .isTimeout();
+    }
 
     bool MultirotorApiBase::moveByVelocityZ(float vx, float vy, float z, float duration, DrivetrainType drivetrain, const YawMode& yaw_mode)
     {

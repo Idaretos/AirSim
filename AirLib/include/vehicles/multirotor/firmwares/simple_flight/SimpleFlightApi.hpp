@@ -292,6 +292,11 @@ namespace airlib
         {
             //Utils::log(Utils::stringf("commandVelocity %f, %f, %f, %f", vx, vy, vz, yaw_mode.yaw_or_rate));
 
+        // unsigned long chrono_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        // std::FILE* logfile = std::fopen("/home/rubis/Control_AirSim/log/Time.log", "a");
+        // std::fprintf(logfile, "commandVelocity, %lu\n", chrono_time);
+        // std::fclose(logfile);
+
             typedef simple_flight::GoalModeType GoalModeType;
             simple_flight::GoalMode mode(GoalModeType::VelocityWorld, GoalModeType::VelocityWorld, yaw_mode.is_rate ? GoalModeType::AngleRate : GoalModeType::AngleLevel, GoalModeType::VelocityWorld);
 

@@ -26,12 +26,14 @@ public:
 
 public:
     virtual void initialize() override;
+    virtual void initialize(std::string vehicle_name) override;
 
     virtual ~MultirotorPawnSimApi() = default;
 
     //VehicleSimApiBase interface
     //implements game interface to update pawn
     MultirotorPawnSimApi(const Params& params);
+    MultirotorPawnSimApi(const Params& params, std::string vehicle_name);
     virtual void updateRenderedState(float dt) override;
     virtual void updateRendering(float dt) override;
 

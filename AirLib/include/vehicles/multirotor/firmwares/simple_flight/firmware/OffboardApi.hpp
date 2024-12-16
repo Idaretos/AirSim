@@ -9,6 +9,7 @@
 #include "interfaces/CommonStructs.hpp"
 #include "RemoteControl.hpp"
 #include "Params.hpp"
+#include <chrono>
 
 namespace simple_flight
 {
@@ -113,6 +114,10 @@ public:
     }
     virtual bool setGoalAndMode(const Axis4r* goal, const GoalMode* goal_mode, std::string& message) override
     {
+        // unsigned long chrono_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        // std::FILE* logfile = std::fopen("/home/rubis/Control_AirSim/log/Time.log", "a");
+        // std::fprintf(logfile, "setGoalAndMode, %lu\n", chrono_time);
+        // std::fclose(logfile);
         if (has_api_control_) {
             if (goal != nullptr)
                 goal_ = *goal;

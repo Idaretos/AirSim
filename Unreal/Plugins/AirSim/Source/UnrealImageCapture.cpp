@@ -5,6 +5,9 @@
 #include "RenderRequest.h"
 #include "common/ClockFactory.hpp"
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 UnrealImageCapture::UnrealImageCapture(const common_utils::UniqueValueMap<std::string, APIPCamera*>* cameras)
     : cameras_(cameras)
 {
@@ -32,6 +35,7 @@ void UnrealImageCapture::getImages(const std::vector<msr::airlib::ImageCaptureBa
 void UnrealImageCapture::getSceneCaptureImage(const std::vector<msr::airlib::ImageCaptureBase::ImageRequest>& requests,
                                               std::vector<msr::airlib::ImageCaptureBase::ImageResponse>& responses, bool use_safe_method) const
 {
+    SCOPED_NAMED_EVENT(UnrealImageCapture_getSceneCaptureImage, FColor::Emerald);
     std::vector<std::shared_ptr<RenderRequest::RenderParams>> render_params;
     std::vector<std::shared_ptr<RenderRequest::RenderResult>> render_results;
 
@@ -117,6 +121,7 @@ void UnrealImageCapture::getSceneCaptureImage(const std::vector<msr::airlib::Ima
 
 bool UnrealImageCapture::updateCameraVisibility(APIPCamera* camera, const msr::airlib::ImageCaptureBase::ImageRequest& request)
 {
+    SCOPED_NAMED_EVENT(UnrealImageCapture_updateCameraVisibility, FColor::Emerald);
     bool visibilityChanged = false;
     if (!camera->getCameraTypeEnabled(request.image_type)) {
         camera->setCameraTypeEnabled(request.image_type, true);

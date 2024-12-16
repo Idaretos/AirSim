@@ -14,6 +14,17 @@
 #include "common/SteppableClock.hpp"
 #include <cinttypes>
 #include <thread>
+#include <map>
+#include <chrono>
+
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <regex>
+
+// #define SERVER_IP "127.0.0.1"  // IP address of the server (modify as needed)
+// #define SERVER_PORT 41542      // Port to connect to
+#define RECEIVER_IP "147.46.174.200"
+#define RECEIVER_PORT 41543
 
 namespace msr
 {
@@ -26,7 +37,62 @@ namespace airlib
         FastPhysicsEngine(bool enable_ground_lock = true, Vector3r wind = Vector3r::Zero())
             : enable_ground_lock_(enable_ground_lock), wind_(wind)
         {
+            // std::FILE* logfile = std::fopen("/home/rubis/Control_AirSim/log/connectionLog.txt", "w");
+            // std::fclose(logfile);
+            // logfile = std::fopen("/home/rubis/Control_AirSim/log/Velocity.log", "w");
+            // std::fclose(logfile);
+
+            struct sockaddr_in server_addr;
+
+            // Create a socket
+            if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+                perror("Socket creation error");
+            }
+
+            // Set up the server address
+            memset(&server_addr, '0', sizeof(server_addr));
+            server_addr.sin_family = AF_INET;
+            server_addr.sin_port = htons(RECEIVER_PORT);
+
+            // Convert IP address from text to binary form
+            if (inet_pton(AF_INET, RECEIVER_IP, &server_addr.sin_addr) <= 0) {
+                perror("Invalid address/ Address not supported");
+                close(sock);
+            }
+
+            // Connect to the server
+            if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+                perror("Connection failed");
+                close(sock);
+            }
+
+            std::ifstream file("/home/rubis/Control_AirSim/customsettings.txt");
+            std::string line;
+            std::string key = "POS_PERIOD";
+            std::string value;
+            while(std::getline(file, line)) {
+                if (line.find(key) != std::string::npos) {
+                    std::istringstream iss(line);
+                    iss >> key >> value;
+                    break;
+                }
+            }
+            file.close();
+            printf("POS_PERIOD: %s\n", value.c_str());
+            POS_PERIOD = std::stoul(value);
+            // convert milliseconds to nanoseconds
+            POS_PERIOD *= 1E6;
+
+            std::FILE* logfile = std::fopen("/home/rubis/Control_AirSim/log/updatePeriod.txt", "w");
+            std::fprintf(logfile, "%lu", POS_PERIOD);
+            std::fclose(logfile);
+
             setName("FastPhysicsEngine");
+        }
+
+        ~FastPhysicsEngine()
+        {
+            close(sock);
         }
 
         //*** Start: UpdatableState implementation ***//
@@ -46,36 +112,57 @@ namespace airlib
 
         void process_chunk(int start, int end, int thread_id) 
         {
+            unused(thread_id);
             for (int i = start; i < end; i++) {
                 PhysicsBody* body_ptr = this->at(i);
                 updatePhysics(*body_ptr);
             }
         }
 
+        std::string formatNumber(float value, int precision = 2) {
+            std::ostringstream ss;
+            ss << std::fixed << std::setprecision(precision);
+            
+            // Handle the negative zero case
+            if (std::abs(value) < std::pow(10, -precision)) {
+                value = 0.0;  // Convert very small values to exact zero
+            }
+            
+            ss << value;
+            std::string result = ss.str();
+            return result.empty() ? "0" : result;
+        }
+
         virtual void update() override
         {
             PhysicsEngineBase::update();
             
-            // int length = this->size();
-            // int num_threads = 5;
-            // std::thread threads[num_threads];
-            // int chunk_size = length / num_threads;
-            // for (int i = 0; i < num_threads; i++) {
-            //     int start = i * chunk_size;
-            //     int end = (i + 1) * chunk_size;
-            //     if (i == num_threads - 1) {
-            //         end = length;
-            //     }
-            //     threads[i] = std::thread(&FastPhysicsEngine::process_chunk, this, start, end, i);
-            // }
-
-            // for (int i = 0; i < num_threads; i++) {
-            //     threads[i].join();
-            // }
-
-            
             for (PhysicsBody* body_ptr : *this) {
                 updatePhysics(*body_ptr);
+            }
+            if (clock()->nowNanos() - last_pos_update > POS_PERIOD) {
+                last_pos_update = clock()->nowNanos();
+                // positions to string message
+                // e.g. "vehicle_name: x, y, z; vehicle_name: x, y, z; ..."
+                std::ostringstream pos_msg;
+                for (auto const& x : positions) {
+                    Vector3r vel = velocities[x.first];
+
+
+                // Usage in your position message formatting:
+                pos_msg << x.first << ":" 
+                        << formatNumber(x.second.x()) << ","
+                        << formatNumber(x.second.y()) << ","
+                        << formatNumber(x.second.z()) << ","
+                        << formatNumber(velocities[x.first].x()) << ","
+                        << formatNumber(velocities[x.first].y()) << ","
+                        << formatNumber(velocities[x.first].z()) << ";";                }
+
+                // std::cout << pos_msg.str() << std::endl;
+
+                // send positions to server
+                send(sock, pos_msg.str().c_str(), strlen(pos_msg.str().c_str()), 0);
+                // printf("Message sent, length: %zu\n", strlen(pos_msg.str().c_str()));
             }
         }
         virtual void reportState(StateReporter& reporter) override
@@ -134,6 +221,10 @@ namespace airlib
             body.setWrench(next_wrench);
             body.updateKinematics(next);
             body.unlock();
+
+            // update the position map
+            positions[body.vehicle_name] = next.pose.position;
+            velocities[body.vehicle_name] = next.twist.linear;
 
             //TODO: this is now being done in PawnSimApi::update. We need to re-think this sequence
             //with below commented out - Arducopter GPS may not work.
@@ -486,6 +577,13 @@ namespace airlib
         bool enable_ground_lock_;
         TTimePoint last_message_time;
         Vector3r wind_;
+
+        std::map<std::string, Vector3r> positions;
+        std::map<std::string, Vector3r> velocities;
+        uint64_t last_pos_update = 0;
+        int sock;
+
+        unsigned long POS_PERIOD = 1.1E9;
     };
 }
 } //namespace

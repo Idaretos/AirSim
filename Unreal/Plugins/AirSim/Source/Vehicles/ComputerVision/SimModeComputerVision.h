@@ -27,6 +27,8 @@ protected:
     virtual void initializeVehiclePawn(APawn* pawn) override;
     virtual std::unique_ptr<PawnSimApi> createVehicleSimApi(
         const PawnSimApi::Params& pawn_sim_api_params) const override;
+    virtual std::unique_ptr<PawnSimApi> createVehicleSimApi(
+        const PawnSimApi::Params& pawn_sim_api_params, std::string vehicle_name) const override;
     virtual msr::airlib::VehicleApiBase* getVehicleApi(const PawnSimApi::Params& pawn_sim_api_params,
                                                        const PawnSimApi* sim_api) const override;
 };

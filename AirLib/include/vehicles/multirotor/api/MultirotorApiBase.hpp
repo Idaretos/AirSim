@@ -14,6 +14,7 @@
 #include <atomic>
 #include <thread>
 #include <memory>
+#include <unistd.h>
 
 namespace msr
 {
@@ -101,6 +102,7 @@ namespace airlib
         virtual bool moveByAngleRatesZ(float roll_rate, float pitch_rate, float yaw_rate, float z, float duration);
         virtual bool moveByAngleRatesThrottle(float roll_rate, float pitch_rate, float yaw_rate, float throttle, float duration);
         virtual bool moveByVelocity(float vx, float vy, float vz, float duration, DrivetrainType drivetrain, const YawMode& yaw_mode);
+        virtual bool moveByVelocity(float vx, float vy, float vz, float duration, DrivetrainType drivetrain, const YawMode& yaw_mode, const std::string vehicle_name);
         virtual bool moveByVelocityZ(float vx, float vy, float z, float duration, DrivetrainType drivetrain, const YawMode& yaw_mode);
         virtual bool moveOnPath(const vector<Vector3r>& path, float velocity, float timeout_sec, DrivetrainType drivetrain, const YawMode& yaw_mode,
                                 float lookahead, float adaptive_lookahead);
@@ -352,6 +354,7 @@ namespace airlib
         void adjustYaw(float x, float y, DrivetrainType drivetrain, YawMode& yaw_mode);
         void moveToPathPosition(const Vector3r& dest, float velocity, DrivetrainType drivetrain, /* pass by value */ YawMode yaw_mode, float last_z);
         bool isYawWithinMargin(float yaw_target, float margin) const;
+        int moveByVelocityCount = 0;
 
     private: //variables
         CancelToken token_;
@@ -365,6 +368,26 @@ namespace airlib
         float approx_zero_vel_ = 0.05f;
         float approx_zero_angular_vel_ = 0.01f;
         RotorStates rotor_states_;
+        
+        class ScopedLogger {
+        public:
+            ScopedLogger(const std::string& message) {
+                start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                this->message = message;
+            }
+            ~ScopedLogger() {
+                end = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                pid_t thread_id = syscall(186);
+                std::FILE* logfile = std::fopen("/home/rubis/Control_AirSim/log/Velocity.log", "a");
+                std::fprintf(logfile, "%lu, %lu, %d, %s\n", start, end, thread_id, message.c_str());
+                std::fclose(logfile);
+            }
+        private:
+            uint64_t start;
+            uint64_t end;
+            std::string message;
+        };
+#define SCOPED_LOGGER(message) ScopedLogger scoped_logger(message)
     };
 }
 } //namespace

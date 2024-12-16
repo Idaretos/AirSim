@@ -136,6 +136,8 @@ protected: //must overrides
     virtual void initializeVehiclePawn(APawn* pawn);
     virtual std::unique_ptr<PawnSimApi> createVehicleSimApi(
         const PawnSimApi::Params& pawn_sim_api_params) const;
+    virtual std::unique_ptr<PawnSimApi> createVehicleSimApi(
+        const PawnSimApi::Params& pawn_sim_api_params, std::string vehicle_name) const;
     virtual msr::airlib::VehicleApiBase* getVehicleApi(const PawnSimApi::Params& pawn_sim_api_params,
                                                        const PawnSimApi* sim_api) const;
     virtual void registerPhysicsBody(msr::airlib::VehicleSimApiBase* physicsBody);

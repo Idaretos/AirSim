@@ -14,15 +14,50 @@
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "DrawDebugHelpers.h"
 
-#include "CoreMinimal.h"
-#include "Misc/AssertionMacros.h"
-
 PawnSimApi::PawnSimApi(const Params& params)
     : params_(params), ned_transform_(params.pawn, *params.global_transform)
 {
 }
 
 void PawnSimApi::initialize()
+{
+    Kinematics::State initial_kinematic_state = Kinematics::State::zero();
+
+    initial_kinematic_state.pose = getPose();
+    kinematics_.reset(new Kinematics(initial_kinematic_state));
+
+    Environment::State initial_environment;
+    initial_environment.position = initial_kinematic_state.pose.position;
+    initial_environment.geo_point = params_.home_geopoint;
+    environment_.reset(new Environment(initial_environment));
+
+    //initialize state
+    params_.pawn->GetActorBounds(true, initial_state_.mesh_origin, initial_state_.mesh_bounds);
+    initial_state_.ground_offset = FVector(0, 0, initial_state_.mesh_bounds.Z);
+    initial_state_.transformation_offset = params_.pawn->GetActorLocation() - initial_state_.ground_offset;
+    ground_margin_ = FVector(0, 0, 20); //TODO: can we explain params_.pawn experimental setting? 7 seems to be minimum
+    ground_trace_end_ = initial_state_.ground_offset + ground_margin_;
+
+    setStartPosition(getUUPosition(), getUUOrientation());
+
+    initial_state_.tracing_enabled = getVehicleSetting()->enable_trace;
+    initial_state_.collisions_enabled = getVehicleSetting()->enable_collisions;
+    initial_state_.passthrough_enabled = getVehicleSetting()->enable_collision_passthrough;
+
+    initial_state_.collision_info = CollisionInfo();
+
+    initial_state_.was_last_move_teleport = false;
+    initial_state_.was_last_move_teleport = canTeleportWhileMove();
+
+    setupCamerasFromSettings(params_.cameras);
+    image_capture_.reset(new UnrealImageCapture(&cameras_));
+
+    //add listener for pawn's collision event
+    params_.pawn_events->getCollisionSignal().connect_member(this, &PawnSimApi::onCollision);
+    params_.pawn_events->getPawnTickSignal().connect_member(this, &PawnSimApi::pawnTick);
+}
+
+void PawnSimApi::initialize(std::string vehicle_name)
 {
     Kinematics::State initial_kinematic_state = Kinematics::State::zero();
 
@@ -447,7 +482,6 @@ void PawnSimApi::setPose(const Pose& pose, bool ignore_collision)
 
 void PawnSimApi::setPoseInternal(const Pose& pose, bool ignore_collision)
 {
-    SCOPED_NAMED_EVENT(PawnSimApi_setPoseInternal, FColor::Green); // to be removed
     //translate to new PawnSimApi position & orientation from NED to NEU
     FVector position = ned_transform_.fromLocalNed(pose.position);
     state_.current_position = position;

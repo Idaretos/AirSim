@@ -13,6 +13,9 @@
 #include <ctime>
 #include <algorithm>
 
+#include "CoreMinimal.h"
+#include "Misc/AssertionMacros.h"
+
 WorldSimApi::WorldSimApi(ASimModeBase* simmode)
     : simmode_(simmode) {}
 
@@ -889,6 +892,7 @@ std::vector<float> WorldSimApi::getDistortionParams(const CameraDetails& camera_
 std::vector<WorldSimApi::ImageCaptureBase::ImageResponse> WorldSimApi::getImages(
     const std::vector<ImageCaptureBase::ImageRequest>& requests, const std::string& vehicle_name, bool external) const
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getImages, FColor::Emerald);
     std::vector<ImageCaptureBase::ImageResponse> responses;
 
     const UnrealImageCapture* camera = simmode_->getImageCapture(vehicle_name, external);
@@ -1024,6 +1028,7 @@ void WorldSimApi::clearDetectionMeshNames(ImageCaptureBase::ImageType image_type
 
 std::vector<msr::airlib::DetectionInfo> WorldSimApi::getDetections(ImageCaptureBase::ImageType image_type, const CameraDetails& camera_details)
 {
+    SCOPED_NAMED_EVENT(WorldSimApi_getDetections, FColor::Emerald);
     std::vector<msr::airlib::DetectionInfo> result;
 
     const APIPCamera* camera = simmode_->getCamera(camera_details);
