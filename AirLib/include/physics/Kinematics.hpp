@@ -103,9 +103,9 @@ namespace airlib
 
         Twist last_updated_twist = Twist::zero();
 
+        State current_;
     private: //fields
         State initial_;
-        State current_;
     };
 }
 } //namespace

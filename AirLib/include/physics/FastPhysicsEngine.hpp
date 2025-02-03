@@ -90,6 +90,7 @@ namespace airlib
         virtual void resetImplementation() override
         {
             for (PhysicsBody* body_ptr : *this) {
+                vehicle_map_[body_ptr->vehicle_name] = body_ptr;
                 initPhysicsBody(body_ptr);
             }
 
@@ -103,6 +104,7 @@ namespace airlib
         virtual void insert(PhysicsBody* body_ptr) override
         {
             PhysicsEngineBase::insert(body_ptr);
+            vehicle_map_[body_ptr->vehicle_name] = body_ptr;
 
             initPhysicsBody(body_ptr);
         }
@@ -154,64 +156,65 @@ namespace airlib
             //get current kinematics state of the body - this state existed since last dt seconds
             const Kinematics::State& current = body.getKinematics();
             
-            if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > UPDATE_PERIOD) {
-                if (mtx.try_lock()) {
-                // swap real_pos_ptr and tmp_pos_ptr
-                    // if (pos1) {
-                    //    pos1 = false;
-                    // } else {
-                    //    pos1 = true;
-                    // }
+            // if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > UPDATE_PERIOD) {
+            //     if (mtx.try_lock()) {
+            //     // swap real_pos_ptr and tmp_pos_ptr
+            //         // if (pos1) {
+            //         //    pos1 = false;
+            //         // } else {
+            //         //    pos1 = true;
+            //         // }
 
-                    std::FILE* trylockfile = std::fopen("/home/idaretos/Control_AirSim/log/trylock.txt", "a");
-                    std::fprintf(trylockfile, "Try lock\n");
-                    std::fclose(trylockfile);
-                    mtx.unlock();
-                }
-                // find the vehicle's position in the real_pos_ptr
-                std::string vehicle_name = body.vehicle_name;
+            //         std::FILE* trylockfile = std::fopen("/home/idaretos/Control_AirSim/log/trylock.txt", "a");
+            //         std::fprintf(trylockfile, "Try lock\n");
+            //         std::fclose(trylockfile);
+            //         mtx.unlock();
+            //     }
+            //     // find the vehicle's position in the real_pos_ptr
+            //     std::string vehicle_name = body.vehicle_name;
                 
-                Eigen::Vector3f vehicle_pos = Eigen::Vector3f::Zero();
-                Vector3r vehicle_vel = Vector3r::Zero();
+            //     Eigen::Vector3f vehicle_pos = Eigen::Vector3f::Zero();
+            //     Vector3r vehicle_vel = Vector3r::Zero();
 
-                mtx.lock();
-                // check if table length is 0
-                if (pos1) {
-                    // std::cout << "Table size: " << real_pos1.size() << std::endl;
-                    if (real_pos1.size() > 0) {
-                        auto it = real_pos1.find(vehicle_name);
-                        if (it != real_pos1.end()) {
-                            // printf("Vehicle: %s\n", vehicle_name.c_str());
-                            last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
-                            vehicle_pos = real_pos1.at(vehicle_name);
-                            vehicle_vel = real_vel.at(vehicle_name);
-                            real_pos1.erase(vehicle_name);
-                            real_vel.erase(vehicle_name);
-                        }
-                    }
-                } else {
-                    if (real_pos2.size() > 0) {
-                        auto it = real_pos2.find(vehicle_name);
-                        // if (real_pos_ptr->find(vehicle_name) != real_pos_ptr->end()) {
-                        if (it != real_pos2.end()) {
-                            last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
-                            vehicle_pos = real_pos2.at(vehicle_name);
-                            real_pos2.erase(vehicle_name);
-                        }
+            //     mtx.lock();
+            //     // check if table length is 0
+            //     if (pos1) {
+            //         // std::cout << "Table size: " << real_pos1.size() << std::endl;
+            //         if (real_pos1.size() > 0) {
+            //             auto it = real_pos1.find(vehicle_name);
+            //             if (it != real_pos1.end()) {
+            //                 // printf("Vehicle: %s\n", vehicle_name.c_str());
+            //                 last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
+            //                 vehicle_pos = real_pos1.at(vehicle_name);
+            //                 vehicle_vel = real_vel.at(vehicle_name);
+            //                 real_pos1.erase(vehicle_name);
+            //                 real_vel.erase(vehicle_name);
+            //             }
+            //         }
+            //     } else {
+            //         if (real_pos2.size() > 0) {
+            //             auto it = real_pos2.find(vehicle_name);
+            //             // if (real_pos_ptr->find(vehicle_name) != real_pos_ptr->end()) {
+            //             if (it != real_pos2.end()) {
+            //                 last_client_update_time_[body.vehicle_name] = clock()->nowNanos();
+            //                 vehicle_pos = real_pos2.at(vehicle_name);
+            //                 real_pos2.erase(vehicle_name);
+            //             }
 
-                        // overwrite the vehicle's position
-                        // body.setPose(Pose(vehicle_pos, Quaternionr::Identity()));
-                    }
-                }
-                mtx.unlock();
-                const_cast<Kinematics::State&>(current).pose.position = vehicle_pos;
-                // const_cast<Kinematics::State&>(current).twist.linear = vehicle_vel;
-                body.kinematics_->last_updated_twist.linear = vehicle_vel;
-                // printf("Vehicle: %s, Velocity: %f %f %f\n", vehicle_name.c_str(), vehicle_vel.x(), vehicle_vel.y(), vehicle_vel.z());
-                body.setGrounded(false);
-            }
-
+            //             // overwrite the vehicle's position
+            //             // body.setPose(Pose(vehicle_pos, Quaternionr::Identity()));
+            //         }
+            //     }
+            //     mtx.unlock();
+            //     const_cast<Kinematics::State&>(current).pose.position = vehicle_pos;
+            //     // const_cast<Kinematics::State&>(current).twist.linear = vehicle_vel;
+            //     body.kinematics_->last_updated_twist.linear = vehicle_vel;
+            //     // printf("Vehicle: %s, Velocity: %f %f %f\n", vehicle_name.c_str(), vehicle_vel.x(), vehicle_vel.y(), vehicle_vel.z());
+            //     body.setGrounded(false);
+            // }
+            mtx.lock();
             const_cast<Kinematics::State&>(current).twist.linear = body.kinematics_->last_updated_twist.linear;
+            mtx.unlock();
 
             Kinematics::State next;
             Wrench next_wrench;
@@ -482,7 +485,9 @@ namespace airlib
 
             /************************* Get force and torque acting on body ************************/
             //set wrench sum to zero
+            mtx.lock();
             const Wrench body_wrench = getBodyWrench(body, current.pose.orientation);
+            mtx.unlock();
 
             if (body.isGrounded()) {
                 // make it stick to the ground until the magnitude of net external force on body exceeds its weight.
@@ -563,7 +568,11 @@ namespace airlib
             //     std::fclose(logFile);
             // }
 
-            computeNextPose(dt, current.pose, avg_linear, avg_angular, next);
+            mtx.lock();
+            Pose pose = current.pose;
+            mtx.unlock();
+            computeNextPose(dt, pose, avg_linear, avg_angular, next);
+            // computeNextPose(dt, current.pose, avg_linear, avg_angular, next);
 
         }
 
@@ -683,7 +692,6 @@ namespace airlib
                 size_t pos = 0;
                 std::string token;
                 
-                mtx.lock();
                 while ((pos = message.find(delimiter)) != std::string::npos) {
                     token = message.substr(0, pos);
                     // check if the token is following the format.
@@ -725,6 +733,15 @@ namespace airlib
                     
                     Eigen::Vector3f position(std::stof(x), std::stof(y), std::stof(z));
                     Vector3r velocity(std::stof(vx), std::stof(vy), std::stof(token));
+
+                mtx.lock();
+                    if (pos1) {
+                        PhysicsBody* body = vehicle_map_[vehicle_name];
+                        body->kinematics_->current_.pose.position = position;
+                        body->kinematics_->last_updated_twist.linear = velocity;
+                        body->setGrounded(false);
+                    }
+                mtx.unlock();
                     
                     if (pos1) {
                         // std::cout << "Inserting into real_pos1, " << vehicle_name << ", " << position << std::endl;
@@ -737,7 +754,6 @@ namespace airlib
                     }
                     message.erase(0, pos + delimiter.length());
                 }
-                mtx.unlock();
                 // std::FILE *logFile = std::fopen("/home/idaretos/Control_AirSim/log/receiveMessage.txt", "a");
                 // std::fprintf(logFile, "Received message: %s\n", buffer);
                 // std::fclose(logFile);
@@ -770,6 +786,8 @@ namespace airlib
         std::unordered_map<std::string, Eigen::Vector3f> real_pos1;
         std::unordered_map<std::string, Eigen::Vector3f> real_pos2;
         std::unordered_map<std::string, Vector3r> real_vel;
+
+        std::map<std::string, PhysicsBody*> vehicle_map_;
         bool pos1 = true;
 
         unsigned long UPDATE_PERIOD = 1.3E9;
@@ -794,7 +812,7 @@ namespace airlib
             uint64_t begin;
             std::stringstream& debug_string_;
         };
-#define SCOPED_NAMED_EVENT(name) ScopeLogger scoped_logger_##__LINE__(debug_string_ << name)
+// #define SCOPED_NAMED_EVENT(name) ScopeLogger scoped_logger_##__LINE__(debug_string_ << name)
     };
 }
 } //namespace
