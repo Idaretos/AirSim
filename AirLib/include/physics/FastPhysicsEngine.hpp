@@ -90,6 +90,7 @@ namespace airlib
         virtual void resetImplementation() override
         {
             for (PhysicsBody* body_ptr : *this) {
+                update_[body_ptr->vehicle_name] = false;
                 initPhysicsBody(body_ptr);
             }
 
@@ -104,6 +105,7 @@ namespace airlib
         {
             PhysicsEngineBase::insert(body_ptr);
 
+            update_[body_ptr->vehicle_name] = false;
             initPhysicsBody(body_ptr);
         }
 
@@ -153,7 +155,27 @@ namespace airlib
             body.lock();
             //get current kinematics state of the body - this state existed since last dt seconds
             const Kinematics::State& current = body.getKinematics();
-            
+
+            Eigen::Vector3f vehicle_pos = Eigen::Vector3f::Zero();
+            Vector3r vehicle_vel = Vector3r::Zero();
+            if (update_[body.vehicle_name]) {
+                mtx.lock(); 
+                std::string vehicle_name = body.vehicle_name;
+
+                auto it = real_pos1.find(body.vehicle_name);
+                if (it != real_pos1.end()) {
+                    update_[vehicle_name] = false;
+                    vehicle_pos = real_pos1.at(vehicle_name);
+                    vehicle_vel = real_vel.at(vehicle_name);
+                    real_pos1.erase(vehicle_name);
+                    real_vel.erase(vehicle_name);
+                }
+                mtx.unlock();
+                const_cast<Kinematics::State&>(current).pose.position = vehicle_pos;
+                body.kinematics_->last_updated_twist.linear = vehicle_vel;
+                body.setGrounded(false);
+            }
+#if 0 
             if (clock()->nowNanos() - last_client_update_time_[body.vehicle_name] > UPDATE_PERIOD) {
                 if (mtx.try_lock()) {
                 // swap real_pos_ptr and tmp_pos_ptr
@@ -210,7 +232,7 @@ namespace airlib
                 // printf("Vehicle: %s, Velocity: %f %f %f\n", vehicle_name.c_str(), vehicle_vel.x(), vehicle_vel.y(), vehicle_vel.z());
                 body.setGrounded(false);
             }
-
+#endif
             const_cast<Kinematics::State&>(current).twist.linear = body.kinematics_->last_updated_twist.linear;
 
             Kinematics::State next;
@@ -735,6 +757,7 @@ namespace airlib
                         real_pos2.insert({vehicle_name, position});
                         real_vel.insert({vehicle_name, velocity});
                     }
+                    update_[vehicle_name] = true;
                     message.erase(0, pos + delimiter.length());
                 }
                 mtx.unlock();
@@ -770,6 +793,7 @@ namespace airlib
         std::unordered_map<std::string, Eigen::Vector3f> real_pos1;
         std::unordered_map<std::string, Eigen::Vector3f> real_pos2;
         std::unordered_map<std::string, Vector3r> real_vel;
+        std::unordered_map<std::string, bool> update_;
         bool pos1 = true;
 
         unsigned long UPDATE_PERIOD = 1.3E9;
@@ -794,7 +818,6 @@ namespace airlib
             uint64_t begin;
             std::stringstream& debug_string_;
         };
-#define SCOPED_NAMED_EVENT(name) ScopeLogger scoped_logger_##__LINE__(debug_string_ << name)
     };
 }
 } //namespace
